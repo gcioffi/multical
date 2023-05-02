@@ -22,9 +22,9 @@ if __name__ == "__main__":
             
     #load the transforms
     camchain_SB = kc.ConfigReader.CameraChainParameters(parsed.viYaml)
-    T_SB = camchain_SB.getExtrinsicsReferenceToCam(0)
+    T_SB = camchain_SB.getExtrinsicsImuToCam(0)
     camchain_B = kc.ConfigReader.CameraChainParameters(parsed.mavYaml)
-    T_B = camchain_B.getExtrinsicsReferenceToCam(0)
+    T_B = camchain_B.getExtrinsicsImuToCam(0)
 
     #find the transformation between the imus
     T_B_SB = T_B.inverse().T().dot(T_SB.T()); 
@@ -71,8 +71,8 @@ if __name__ == "__main__":
         with open(parsed.outLoc, 'w') as file_:
           file_.write(CONFIG)
     else:
-        print
-        print "Copy the following block to your msf configuration:"
-        print "-----------------------------------------------------"
-        print
-        print CONFIG
+        print("")
+        print("Copy the following block to your msf configuration:")
+        print("-----------------------------------------------------")
+        print("")
+        print(CONFIG)

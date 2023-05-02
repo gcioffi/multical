@@ -52,7 +52,9 @@ def set_axis_equal_3d(ax):
     r = maxsize / 2
     for ctr, dim in zip(centers, 'xyz'):
         getattr(ax, 'set_{}lim'.format(dim))(ctr - r, ctr + r)
-    ax.set_aspect('equal')
+    ax.set_xlim(centers[0]-maxsize, centers[0]+maxsize)
+    ax.set_ylim(centers[1]-maxsize, centers[1]+maxsize)
+    ax.set_zlim(centers[2]-maxsize, centers[2]+maxsize)
 
 
 def set_orthogonal_projection(zfront, zback):
@@ -166,7 +168,7 @@ def main():
                     cam_index).inverse()
                 T_c0_cn = T_c0_cnm1 * T_cnm1_cn
             elif 'T_cam_imu' in camchain.data[cam]:
-                T_c0_i = T_c0_cn * camchain.getExtrinsicsReferenceToCam(cam_index)
+                T_c0_i = T_c0_cn * camchain.getExtrinsicsImuToCam(cam_index)
                 calibration_visualization.add_coordinate_frame_plot(T_c0_i)
             intrinsics = np.asarray(camchain.data[cam]['intrinsics'])
             resolution = np.asarray(camchain.data[cam]['resolution'])

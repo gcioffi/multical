@@ -96,7 +96,7 @@ if __name__ == "__main__":
     for cidx in range(0, camchain.numCameras()):
         camConfig = camchain.getCameraParameters(cidx)
         
-        T_SC = camchain.getExtrinsicsReferenceToCam(cidx).inverse().T()
+        T_SC = camchain.getExtrinsicsImuToCam(cidx).inverse().T()
         CONFIG += printCameraBlock(camConfig, T_SC)
 
     # get an instance of RosPack with the default search paths
@@ -113,9 +113,9 @@ if __name__ == "__main__":
         with open(parsed.outLoc, 'w') as file_:
           file_.write(CONFIG)
     else:
-        print
-        print "Copy the following block to your aslam configuration:"
-        print "-----------------------------------------------------"
-        print
-        print CONFIG
+        print("")
+        print("Copy the following block to your aslam configuration:")
+        print("-----------------------------------------------------")
+        print("")
+        print(CONFIG)
     
