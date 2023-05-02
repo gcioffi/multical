@@ -210,7 +210,7 @@ def main():
 
     has_imu = False
     if parsed.imu_yaml:
-        print "Initializing IMUs:"
+        print("Initializing IMUs:")
 
         imus = list()
         imu_config_list = kc.ImuSetParameters(parsed.imu_yaml,
@@ -247,7 +247,7 @@ def main():
 
     # load calibration target configuration
     targetConfig = kc.CalibrationTargetParameters(parsed.target_yaml)
-    print "Initializing calibration target:"
+    print("Initializing calibration target:")
     targetConfig.printDetails()
 
     grid = sens.initCalibrationTarget(targetConfig,
@@ -267,7 +267,7 @@ def main():
 
         has_lidar = True
 
-    print "Initializing camera chain:"
+    print("Initializing camera chain:")
     chain = kc.CameraChainParameters(parsed.chain_yaml, reference_sensor_name)
     chain.printDetails()
     camChain = sens.CameraChain(chain, targets, parsed, is_camera_reference)
@@ -275,8 +275,8 @@ def main():
     # register sensors with calibrator
     iCal.registerCamChain(camChain)
 
-    print
-    print "Building the problem"
+    print()
+    print("Building the problem")
     iCal.buildProblem(splineOrder=6,
                       poseKnotsPerSecond=100,
                       biasKnotsPerSecond=5,
@@ -292,18 +292,18 @@ def main():
                       timeOffsetPadding=parsed.timeoffset_padding,
                       verbose=parsed.verbose)
 
-    print
-    print "Before Optimization"
-    print "==================="
+    print()
+    print("Before Optimization")
+    print("===================")
     util.printErrorStatistics(iCal)
 
-    print
-    print "Optimizing..."
+    print()
+    print("Optimizing...")
     iCal.optimize(maxIterations=parsed.max_iter, recoverCov=parsed.recover_cov)
 
-    print
-    print "After Optimization (Results)"
-    print "=================="
+    print()
+    print("After Optimization (Results)")
+    print("==================")
     util.printErrorStatistics(iCal)
     util.printResults(iCal, withCov=parsed.recover_cov)
 
@@ -312,7 +312,7 @@ def main():
             _, points = lidar.transformMeasurementsToWorldFrame(iCal.poseDv)
             util.showPointCloud([points.T], window_name="lidar%d" % idx)
 
-    print
+    print()
     tag = "calibration_results-"
     tag += parsed.chain_yaml.translate(None, "<>:/\|?*").replace('.yaml', '', 1)
     tag += '-'
@@ -328,33 +328,30 @@ def main():
 
     cam_result_file_name = tag + "-cams.yaml"
     iCal.saveCamChainParametersYaml(cam_result_file_name)
-    print "  Saving camera chain calibration to file: {0}".format(
-        cam_result_file_name)
+    print("  Saving camera chain calibration to file: %s".format() % cam_result_file_name)
 
     if has_imu:
-        print
+        print()
         cam_result_file_name = tag + "-imus.yaml"
         iCal.saveImuSetParametersYaml(cam_result_file_name)
-        print "  Saving imu calibration to file: {0}".format(
-            cam_result_file_name)
+        print("  Saving imu calibration to file: {0}".format() % cam_result_file_name)
 
     if has_lidar:
-        print
+        print()
         lidar_result_file_name = tag + "-lidars.yaml"
         iCal.saveLiDARsParametersYaml(lidar_result_file_name)
-        print "  Saving LiDARs calibration to file: {0}".format(
-            lidar_result_file_name)
+        print("  Saving LiDARs calibration to file: {0}".format() % lidar_result_file_name)
 
     resultFileTxt = tag + ".txt"
     util.saveResultTxt(iCal, filename=resultFileTxt)
-    print "  Detailed results written to file: {0}".format(resultFileTxt)
+    print( "  Detailed results written to file: {0}".format(resultFileTxt))
 
-    print "Generating result report..."
+    print( "Generating result report...")
     reportFile = "report-" + tag + ".pdf"
     util.generateReport(iCal, filename=reportFile,
                         showOnScreen=not parsed.dontShowReport)
-    print "  Report written to {0}".format(reportFile)
-    print
+    print( "  Report written to {0}".format(reportFile))
+    print()
 
 
 if __name__ == "__main__":

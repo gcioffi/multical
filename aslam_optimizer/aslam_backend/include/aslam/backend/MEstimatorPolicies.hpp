@@ -40,6 +40,7 @@ namespace aslam {
       double _sigma2;
     };
 
+  
     class HuberMEstimator : public MEstimator {
     public:
       HuberMEstimator(double k);
@@ -47,16 +48,6 @@ namespace aslam {
       virtual double getWeight(double error) const;
       virtual std::string name() const;
 
-      double _k;
-      double _k2;
-    };
-
-    class BzMEstimator : public MEstimator {
-    public:
-      BzMEstimator(double k);
-      virtual ~BzMEstimator();
-      virtual double getWeight(double error) const;
-      virtual std::string name() const;
       double _k;
       double _k2;
     };
