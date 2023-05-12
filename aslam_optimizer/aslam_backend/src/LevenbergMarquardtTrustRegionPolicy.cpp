@@ -51,9 +51,23 @@ namespace aslam {
         {
             SM_ASSERT_TRUE(Exception, _solver.get() != NULL, "The solver is null");
             
+            // debug
+            // std::cout << "Using " << nThreads << " threads\n";
+            // end
+
             if (isFirstIteration()) {
+                
+                // debug
+                // std::cout << "First Iteration _solver->buildSystem doing !\n";
+                // end
+
                 // This is the first step.
                 _solver->buildSystem(nThreads, true);
+
+                // debug
+                // std::cout << "First Iteration _solver->buildSystem done !\n";
+                // end
+
             } else {
                 ///get Rho and update Lambda:
                 double rho = getLmRho();
@@ -69,7 +83,17 @@ namespace aslam {
                 } else {
                     // The last iteration was successful
                     // Here we need to rebuild the system
+                    
+                    // debug
+                    // std::cout << "The last iteration was successful _solver->buildSystem doing !\n";
+                    // end
+
                     _solver->buildSystem(nThreads, true);
+
+                    // debug
+                    // std::cout << "The last iteration was successful _solver->buildSystem done !\n";
+                    // end
+
                     if (_lambda > 1e-16) {
                         double u1 = 1 / _gamma;
                         double u2 = 1 - (_beta - 1) * pow((2 * rho - 1), _p);
@@ -84,8 +108,26 @@ namespace aslam {
                 }
             }
             
+            // debug
+            // std::cout << "_solver->setConstantConditioner doing !\n";
+            // end
+
             _solver->setConstantConditioner(_lambda);
+
+            // debug
+            // std::cout << "_solver->setConstantConditioner done !\n";
+            // end
+
+            // debug
+            // std::cout << "_solver->solveSystem(_dx) doing !\n";
+            // end
+
             bool success = _solver->solveSystem(_dx);
+
+            // debug
+            // std::cout << "_solver->solveSystem(_dx) done !\n";
+            // end
+
             outDx = _dx;
             return success;
         }

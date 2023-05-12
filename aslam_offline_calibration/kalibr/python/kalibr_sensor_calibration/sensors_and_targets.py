@@ -6,10 +6,10 @@ import aslam_backend as aopt
 import bsplines
 import kalibr_common as kc
 import kalibr_errorterms as ket
-import calibrator as ic
-from LiDARToSensorCalibration import *
-import util as util
-from FindTargetFromPointCloud import find_target_pose
+from . import calibrator as ic
+from .LiDARToSensorCalibration import *
+from . import util
+from .FindTargetFromPointCloud import find_target_pose
 import cv2
 import sys
 import math
@@ -20,7 +20,12 @@ from copy import deepcopy
 import open3d as o3d
 import colorsys
 import random
-import Queue
+try:
+    # Python 2
+    import Queue
+except ImportError:
+    # Python 3
+    import queue as Queue
 # from matplotlib import rc
 # # make numpy print prettier
 # np.set_printoptions(suppress=True)
@@ -31,33 +36,33 @@ import matplotlib.pyplot as plt
 
 
 def initLiDARBagDataset(bag_file, topic, relative_timestamp=False, from_to=None):
-    print "Initializing LiDAR rosbag dataset reader:"
-    print "\tDataset:          {0}".format(bag_file)
-    print "\tTopic:            {0}".format(topic)
+    print( "Initializing LiDAR rosbag dataset reader:")
+    print( "\tDataset:          {0}".format(bag_file))
+    print( "\tTopic:            {0}".format(topic))
     #     reader = kc.BagScanDatasetReader(bagfile, topic, bag_from_to=from_to)
     reader = kc.BagLiDARDatasetReader(bag_file, topic,
                                       relative_timestamp=relative_timestamp, bag_from_to=from_to)
-    print "\tNumber of messages: {0}".format(len(reader.index))
+    print( "\tNumber of messages: {0}".format(len(reader.index)))
     return reader
 
 
 def initCameraBagDataset(bag_file, topic, from_to=None, perform_synchronization=False):
-    print "Initializing camera rosbag dataset reader:"
-    print "\tDataset:          {0}".format(bag_file)
-    print "\tTopic:            {0}".format(topic)
+    print( "Initializing camera rosbag dataset reader:")
+    print( "\tDataset:          {0}".format(bag_file))
+    print( "\tTopic:            {0}".format(topic))
     reader = kc.BagImageDatasetReader(bag_file, topic, bag_from_to=from_to, \
                                       perform_synchronization=perform_synchronization)
-    print "\tNumber of images: {0}".format(len(reader.index))
+    print( "\tNumber of images: {0}".format(len(reader.index)))
     return reader
 
 
 def initImuBagDataset(bag_file, topic, from_to=None, perform_synchronization=False):
-    print "Initializing imu rosbag dataset reader:"
-    print "\tDataset:          {0}".format(bag_file)
-    print "\tTopic:            {0}".format(topic)
+    print( "Initializing imu rosbag dataset reader:")
+    print( "\tDataset:          {0}".format(bag_file))
+    print( "\tTopic:            {0}".format(topic))
     reader = kc.BagImuDatasetReader(bag_file, topic, bag_from_to=from_to, \
                                     perform_synchronization=perform_synchronization)
-    print "\tNumber of messages: {0}".format(len(reader.index))
+    print( "\tNumber of messages: {0}".format(len(reader.index)))
     return reader
 
 
@@ -159,7 +164,7 @@ class LiDAR:
 
 
     def loadLiDARDataAndFindTarget(self, reservedPointsPerFrame):
-        print "Reading LiDAR data ({0})".format(self.dataset.topic)
+        print( "Reading LiDAR data ({0})".format(self.dataset.topic))
 
         iProgress = sm.Progress2(self.dataset.numMessages())
         iProgress.sample()
@@ -188,10 +193,23 @@ class LiDAR:
         numFramesWithTapes = len(self.targetPoses)
         timeSpan = self.lidarData[-1, 3] - self.lidarData[0, 3]
 
+        # debug
+        cnt = 0
+        for p, r, t in self.targetPoses:
+            cnt += 1
+            print("Target %d:" % cnt)
+            print("time: ")
+            print(t)
+            print("position: ")
+            print(p)
+            print("orientation: ")
+            print(r)
+        # end
+
         if numPoints > 100:
-            print "\r  Read %d LiDAR readings from %d frames over %.1f seconds, and " \
+            print( "\r  Read %d LiDAR readings from %d frames over %.1f seconds, and " \
                   "detect target by tapes from %d frames                    " \
-                  % (numPoints, numFrames, timeSpan, numFramesWithTapes)
+                  % (numPoints, numFrames, timeSpan, numFramesWithTapes))
         else:
             sm.logFatal("Could not find any LiDAR messages. Please check the dataset.")
             sys.exit(-1)
@@ -296,7 +314,7 @@ class LiDAR:
 
                 if predictedMeasurement.toScalar() < 0.:
                     predictedMeasurement = predictedMeasurement * -1.0
-                    print "Swapped sign! This should not happen normally!"
+                    print( "Swapped sign! This should not happen normally!")
 
                 error = ket.ScalarError(distance, self.invR,
                                        predictedMeasurement)
@@ -416,7 +434,7 @@ class Camera():
     #          and imu, the maximum corresponds to the timeshift...
     #          in a next step we can use the time shift to estimate the rotation between camera and imu
     def findTimeshiftCameraImuPrior(self, imu, verbose=False):
-        print "Estimating time shift camera to imu:"
+        print( "Estimating time shift camera to imu:")
 
         # fit a spline to the camera observations
         poseSpline = self.initPoseSplineFromCamera(timeOffsetPadding=0.0)
@@ -471,15 +489,15 @@ class Camera():
         # store the timeshift (t_imu = t_cam + timeshiftCamToImuPrior)
         self.timeshiftCamToReferencePrior = shift
 
-        print "  Time shift camera to imu0 (t_imu0 = t_cam + shift):"
-        print self.timeshiftCamToReferencePrior
+        print( "  Time shift camera to imu0 (t_imu0 = t_cam + shift):")
+        print( self.timeshiftCamToReferencePrior)
 
     # initialize a pose spline using camera poses (pose spline = T_wb)
     def initPoseSplineFromCamera(self, splineOrder=6, poseKnotsPerSecond=100, timeOffsetPadding=0.02):
         pose = bsplines.BSplinePose(splineOrder, sm.RotationVector())
 
         time_interval_threshold = 3.0 * splineOrder / poseKnotsPerSecond
-        print "time interval threshold {0}".format(time_interval_threshold)
+        print( "time interval threshold {0}".format(time_interval_threshold))
         # Get the checkerboard times.
         times = []
         curve = []
@@ -491,8 +509,8 @@ class Camera():
             if previous_time is None:
                 previous_time = current_time
             elif (current_time - previous_time) > time_interval_threshold:
-                print "The data gathering will break because of too large time interval ({0}s)".format(current_time - previous_time)
-                print " Time span of gathered data is {0}s".format(times[-1] - times[0])
+                print( "The data gathering will break because of too large time interval ({0}s)".format(current_time - previous_time))
+                print( " Time span of gathered data is {0}s".format(times[-1] - times[0]))
                 break
             else:
                 previous_time = current_time
@@ -533,9 +551,9 @@ class Camera():
         seconds = times[-1] - times[0]
         knots = int(round(seconds * poseKnotsPerSecond))
 
-        print
-        print "Initializing a pose spline with %d knots (%f knots per second over %f seconds)" % (
-        knots, poseKnotsPerSecond, seconds)
+        print()
+        print( "Initializing a pose spline with %d knots (%f knots per second over %f seconds)" % (
+            knots, poseKnotsPerSecond, seconds))
         pose.initPoseSplineSparse(times, curve, knots, 1e-4)
         return pose
 
@@ -554,8 +572,8 @@ class Camera():
         problem.addDesignVariable(self.cameraTimeToReferenceTimeDv, ic.CALIBRATION_GROUP_ID)
 
     def addCameraErrorTerms(self, problem, poseSplineDv, blakeZissermanDf=0.0, timeOffsetPadding=0.0):
-        print
-        print "Adding camera error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding camera error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.targetObservations))
@@ -626,7 +644,7 @@ class Camera():
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} camera error terms                      ".format(len(self.targetObservations))
+        print( "\r  Added {0} camera error terms                      ".format(len(self.targetObservations)))
         self.allReprojectionErrors = allReprojectionErrors
 
 
@@ -675,13 +693,13 @@ class CameraChain():
             try:
                 T_camN_camNMinus1 = self.chainConfig.getExtrinsicsLastCamToHere(camNr)
             except:
-                print "No camera extrinsics are provide in config File"
+                print( "No camera extrinsics are provide in config File")
                 return False
 
             self.camList[camNr].init_T_c_b = T_camN_camNMinus1 * self.camList[camNr-1].init_T_c_b
-            print "Baseline between cam{0} and cam{1} set to:".format(camNr - 1, camNr)
-            print "T= ", T_camN_camNMinus1.T()
-            print "Baseline: ", np.linalg.norm(T_camN_camNMinus1.t()), " [m]"
+            print( "Baseline between cam{0} and cam{1} set to:".format(camNr - 1, camNr))
+            print( "T= ", T_camN_camNMinus1.T())
+            print( "Baseline: ", np.linalg.norm(T_camN_camNMinus1.t()), " [m]")
 
         return True
 
@@ -738,9 +756,9 @@ class CameraChain():
         seconds = times[-1] - times[0]
         knots = int(round(seconds * poseKnotsPerSecond))
 
-        print
-        print "Initializing a pose spline with %d knots (%f knots per second over %f seconds)" % (
-            knots, poseKnotsPerSecond, seconds)
+        print()
+        print( "Initializing a pose spline with %d knots (%f knots per second over %f seconds)" % (
+            knots, poseKnotsPerSecond, seconds))
         pose.initPoseSplineSparse(times, curve, knots, 1e-4)
         return pose
 
@@ -769,9 +787,11 @@ class CameraChain():
             return
         targetTransformations = {}
         adjacentList = [[] for _ in range(len(targets))]
+
         for cam in self.camList:
             for observation in cam.targetObservations:
                 observedTargetsNumber = len(observation)
+
                 if observedTargetsNumber < 2:
                     continue
                 for i in range(0, observedTargetsNumber-1):
@@ -837,14 +857,14 @@ class CameraChain():
             sys.exit(-1)
         for i in range(len(targets)):
             targets[i].setInitialGuess(sm.Transformation(T_t_w_Dv[i].T()))
-            print "Transformation prior calibration world to target {0} found as: (T_t{0}_t0)".format(i)
-            print T_t_w_Dv[i].T()
+            print( "Transformation prior calibration world to target {0} found as: (T_t{0}_t0)".format(i))
+            print( T_t_w_Dv[i].T())
 
     #
     def findExtrinsicPriorSensorsToCamera(self, imu=None, lidar_list=[]):
 
-        print
-        print "Estimating initial extrinsic parameters between primary camera and all other sensors"
+        print()
+        print( "Estimating initial extrinsic parameters between primary camera and all other sensors")
 
         # build the problem
         problem = aopt.OptimizationProblem()
@@ -919,7 +939,7 @@ class CameraChain():
                     problem.addErrorTerm(error)
 
         if problem.numErrorTerms() == 0:
-            print "No initial extrinsic parameter is waited to estimate"
+            print( "No initial extrinsic parameter is waited to estimate")
             return
 
         # define the optimization
@@ -950,8 +970,8 @@ class CameraChain():
                 R_i_b = q_i_c_Dv.toRotationMatrix()
                 imu.init_q_i_b = sm.r2quat(R_i_b)
 
-            print "  Orientation prior camera-imu found as: (T_i_c)"
-            print q_i_c_Dv.toRotationMatrix()
+            print( "  Orientation prior camera-imu found as: (T_i_c)")
+            print( q_i_c_Dv.toRotationMatrix())
 
         if not self.has_initialized:
             # Add cameras' extrinsics
@@ -959,8 +979,8 @@ class CameraChain():
                 self.camList[i+1].init_T_c_b = sm.Transformation(T_ci_c_Dv[i].T()) * \
                                                     self.camList[0].init_T_c_b
 
-                print "Transformation from body to cam{0} set to:".format(i+1)
-                print "T= ", self.camList[i+1].init_T_c_b.T()
+                print( "Transformation from body to cam{0} set to:".format(i+1))
+                print( "T= ", self.camList[i+1].init_T_c_b.T())
 
         idx_T_l_c_Dv = 0
         for idx, lidar in enumerate(lidar_list):
@@ -968,8 +988,8 @@ class CameraChain():
                 lidar.init_T_l_b = sm.Transformation(T_l_c_Dv_list[idx_T_l_c_Dv].T()) * self.camList[0].init_T_c_b
                 idx_T_l_c_Dv += 1
                 lidar.hasInitializedExtrinsics = True
-            print "Transformation from reference sensor to LiDAR{0} set to:".format(idx)
-            print "T= ", lidar.init_T_l_b.T()
+            print( "Transformation from reference sensor to LiDAR{0} set to:".format(idx))
+            print( "T= ", lidar.init_T_l_b.T())
 
         if imu:
             # estimate gravity in the world coordinate frame as the mean specific force
@@ -981,7 +1001,7 @@ class CameraChain():
                     a_w.append(np.dot(pose_spline.orientation(tk), np.dot(R_c_i, - im.alpha)))
             mean_a_w = np.mean(np.asarray(a_w).T, axis=1)
             gravity_w = mean_a_w / np.linalg.norm(mean_a_w) * 9.80655
-            print "Gravity was intialized to", gravity_w, "[m/s^2]"
+            print( "Gravity was intialized to", gravity_w, "[m/s^2]")
 
             # set the gyro bias prior (if we have more than 1 cameras use recursive average)
             b_gyro = gyroBiasDv.toExpression().toEuclidean()
@@ -989,8 +1009,8 @@ class CameraChain():
             imu.GyroBiasPrior = (imu.GyroBiasPriorCount - 1.0) / imu.GyroBiasPriorCount * imu.GyroBiasPrior + 1.0 / imu.GyroBiasPriorCount * b_gyro
 
             # print result
-            print "  Gyro bias prior found as: (b_gyro)"
-            print b_gyro
+            print( "  Gyro bias prior found as: (b_gyro)")
+            print( b_gyro)
 
             return gravity_w
 
@@ -1073,7 +1093,7 @@ class Imu(object):
             self.stamp = stamp
 
     def loadImuData(self):
-        print "Reading IMU data ({0})".format(self.dataset.topic)
+        print( "Reading IMU data ({0})".format(self.dataset.topic))
 
         # prepare progess bar
         iProgress = sm.Progress2(self.dataset.numMessages())
@@ -1086,7 +1106,7 @@ class Imu(object):
         # omega -- angular_velocity
         # alpha -- linear_acceleration
         imu = []
-        for timestamp, (omega, alpha) in self.dataset:
+        for timestamp, omega, alpha in self.dataset:
             timestamp = acv.Time(timestamp.toSec())
             imu.append(self.ImuMeasurement(timestamp, omega, alpha, Rgyro, Raccel))
             iProgress.sample()
@@ -1094,8 +1114,8 @@ class Imu(object):
         self.imuData = imu
 
         if len(self.imuData) > 1:
-            print "\r  Read %d imu readings over %.1f seconds                   " \
-                  % (len(imu), imu[-1].stamp.toSec() - imu[0].stamp.toSec())
+            print( "\r  Read %d imu readings over %.1f seconds                   " \
+                  % (len(imu), imu[-1].stamp.toSec() - imu[0].stamp.toSec()))
         else:
             sm.logFatal("Could not find any IMU messages. Please check the dataset.")
             sys.exit(-1)
@@ -1132,8 +1152,8 @@ class Imu(object):
 
     def addAccelerometerErrorTerms(self, problem, poseSplineDv, g_w, mSigma=0.0, \
                                    accelNoiseScale=1.0):
-        print
-        print "Adding accelerometer error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding accelerometer error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.imuData))
@@ -1174,14 +1194,14 @@ class Imu(object):
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
-            len(self.imuData) - num_skipped, len(self.imuData), num_skipped)
+        print( "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
+            len(self.imuData) - num_skipped, len(self.imuData), num_skipped))
         self.accelErrors = accelErrors
 
     def addGyroscopeErrorTerms(self, problem, poseSplineDv, mSigma=0.0, gyroNoiseScale=1.0, \
                                g_w=None):
-        print
-        print "Adding gyroscope error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding gyroscope error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.imuData))
@@ -1216,8 +1236,8 @@ class Imu(object):
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} of {1} gyroscope error terms (skipped {2} out-of-bounds measurements)".format(
-            len(self.imuData) - num_skipped, len(self.imuData), num_skipped)
+        print( "\r  Added {0} of {1} gyroscope error terms (skipped {2} out-of-bounds measurements)".format(
+            len(self.imuData) - num_skipped, len(self.imuData), num_skipped))
         self.gyroErrors = gyroErrors
 
     def initBiasSplines(self, poseSpline, splineOrder, biasKnotsPerSecond):
@@ -1226,8 +1246,8 @@ class Imu(object):
         seconds = end - start;
         knots = int(round(seconds * biasKnotsPerSecond))
 
-        print
-        print "Initializing the bias splines with %d knots" % (knots)
+        print()
+        print( "Initializing the bias splines with %d knots" % (knots))
 
         if not self.staticBias:
             # initialize the bias splines
@@ -1253,8 +1273,8 @@ class Imu(object):
                                         self.r_b_i_Dv.toEuclidean()))
 
     def findOrientationPrior(self, referenceImu):
-        print
-        print "Estimating imu-imu rotation initial guess."
+        print()
+        print( "Estimating imu-imu rotation initial guess.")
 
         # build the problem
         problem = aopt.OptimizationProblem()
@@ -1346,9 +1366,9 @@ class Imu(object):
             refined_shift = scipy.optimize.fmin(objectiveFunction, np.array([shift]), maxiter=100)[0]
             self.timeOffset = float(refined_shift)
 
-        print "Temporal correction with respect to reference IMU "
-        print self.timeOffset, "[s]", ("" if self.estimateTimedelay else \
-                                           " (this offset is not accounted for in the calibration)")
+        print( "Temporal correction with respect to reference IMU ")
+        print( self.timeOffset, "[s]", ("" if self.estimateTimedelay else \
+                                           " (this offset is not accounted for in the calibration)"))
 
         # Add constant gyro bias as design variable
         gyroBiasDv = aopt.EuclideanPointDv(np.zeros(3))
@@ -1376,8 +1396,8 @@ class Imu(object):
             sm.logFatal("Failed to obtain initial guess for the relative orientation!")
             sys.exit(-1)
 
-        print "Estimated imu to reference imu Rotation: "
-        print q_i_b_Dv.toRotationMatrix()
+        print( "Estimated imu to reference imu Rotation: ")
+        print( q_i_b_Dv.toRotationMatrix())
 
         self.init_q_i_b = sm.r2quat(q_i_b_Dv.toRotationMatrix())
 
@@ -1448,8 +1468,8 @@ class ScaledMisalignedImu(Imu):
 
     def addAccelerometerErrorTerms(self, problem, poseSplineDv, g_w, mSigma=0.0, \
                                    accelNoiseScale=1.0):
-        print
-        print "Adding accelerometer error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding accelerometer error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.imuData))
@@ -1492,13 +1512,13 @@ class ScaledMisalignedImu(Imu):
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
-            len(self.imuData) - num_skipped, len(self.imuData), num_skipped)
+        print( "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
+            len(self.imuData) - num_skipped, len(self.imuData), num_skipped))
         self.accelErrors = accelErrors
 
     def addGyroscopeErrorTerms(self, problem, poseSplineDv, mSigma=0.0, gyroNoiseScale=1.0, g_w=None):
-        print
-        print "Adding gyroscope error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding gyroscope error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.imuData))
@@ -1545,8 +1565,8 @@ class ScaledMisalignedImu(Imu):
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} of {1} gyroscope error terms (skipped {2} out-of-bounds measurements)".format(
-            len(self.imuData) - num_skipped, len(self.imuData), num_skipped)
+        print( "\r  Added {0} of {1} gyroscope error terms (skipped {2} out-of-bounds measurements)".format(
+            len(self.imuData) - num_skipped, len(self.imuData), num_skipped))
         self.gyroErrors = gyroErrors
 
 
@@ -1607,8 +1627,8 @@ class ScaledMisalignedSizeEffectImu(ScaledMisalignedImu):
 
     def addAccelerometerErrorTerms(self, problem, poseSplineDv, g_w, mSigma=0.0, \
                                    accelNoiseScale=1.0):
-        print
-        print "Adding accelerometer error terms ({0})".format(self.dataset.topic)
+        print()
+        print( "Adding accelerometer error terms ({0})".format(self.dataset.topic))
 
         # progress bar
         iProgress = sm.Progress2(len(self.imuData))
@@ -1656,6 +1676,6 @@ class ScaledMisalignedSizeEffectImu(ScaledMisalignedImu):
             # update progress bar
             iProgress.sample()
 
-        print "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
-            len(self.imuData) - num_skipped, len(self.imuData), num_skipped)
+        print( "\r  Added {0} of {1} accelerometer error terms (skipped {2} out-of-bounds measurements)".format(
+            len(self.imuData) - num_skipped, len(self.imuData), num_skipped))
         self.accelErrors = accelErrors

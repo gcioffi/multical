@@ -1,6 +1,6 @@
 import aslam_backend as aopt
 import aslam_splines as asp
-import util as util
+from . import util
 import incremental_calibration as inc
 import kalibr_common as kc
 import sm
@@ -36,6 +36,15 @@ def optimize(problem, options=None, maxIterations=30):
         options.maxIterations = maxIterations
         options.trustRegionPolicy = aopt.LevenbergMarquardtTrustRegionPolicy(options.levenbergMarquardtLambdaInit)
         options.linearSolver = aopt.BlockCholeskyLinearSystemSolver()
+
+    print("\nOptimization options\n")
+    print("verbose: %s" % options.verbose)
+    print("doLevenbergMarquardt: %s" % options.doLevenbergMarquardt)
+    print("levenbergMarquardtLambdaInit: %.1f" % options.levenbergMarquardtLambdaInit)
+    print("nThreads: %d" % options.nThreads)
+    print("convergenceDeltaX: %.6f" % options.convergenceDeltaX)
+    print("convergenceJDescentRatioThreshold: %.6f" % options.convergenceJDescentRatioThreshold)
+    print("maxIterations: %d" % options.maxIterations)
 
     # run the optimization
     optimizer = aopt.Optimizer2(options)

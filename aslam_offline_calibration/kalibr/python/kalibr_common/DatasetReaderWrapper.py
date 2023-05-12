@@ -19,6 +19,10 @@ class DatasetReaderIterator(object):
     def next(self):
         idx = self.iter.next()
         return self.dataset.getData(idx)
+    
+    def __next__(self):
+        idx = next(self.iter)
+        return self.dataset.getData(idx)
 
 
 class BagDatasetReaderWrapper(object):
@@ -39,7 +43,7 @@ class BagDatasetReaderWrapper(object):
         indices = self.bag._get_indexes(conx)
 
         try:
-            self.index = indices.next()
+            self.index = next(indices)
         except:
             raise RuntimeError(
                 "Could not find topic {0} in {1}.".format(topic, self.bag_file))

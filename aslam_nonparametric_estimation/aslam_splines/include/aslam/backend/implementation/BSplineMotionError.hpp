@@ -92,18 +92,31 @@ namespace aslam {
         template<class SPLINE_T>
         void BSplineMotionError<SPLINE_T>::buildHessianImplementation(SparseBlockMatrix & outHessian, Eigen::VectorXd & outRhs, bool /* useMEstimator */) {
             
-            
+            // debug
+            // std::cout << "In aslam splines buildHessianImplementation\n";
+            // end
+
             // get the coefficients:
             Eigen::MatrixXd coeff = _splineDV->spline().coefficients();
             // create a column vector of spline coefficients
             int dim = coeff.rows(); 
             int seg = coeff.cols();
+
+            // debug
+            // std::cout << "dim :" << dim << "\n";
+            // std::cout << "seg :" << seg << "\n";
+            // end
+
             // build a vector of coefficients:
             Eigen::VectorXd c(dim*seg);
             // rows are spline dimension
             for(int i = 0; i < seg; i++) {
                 c.block(i*dim,0,dim,1) = coeff.block(0, i, dim,1);
             }
+
+            // debug
+            // std::cout << "c :" << c.size() << "\n";
+            // end
             
             // right hand side:
             Eigen::VectorXd b_u(_Q.rows());  // number of rows of Q:
@@ -116,8 +129,7 @@ namespace aslam {
             
             _Q.multiply(&b_u, c);
 
-            // place the hessian elements in the correct place:        
-        
+            // place the hessian elements in the correct place:
             // build hessian:
             for(size_t i = 0; i < numDesignVariables(); i++)
             {
@@ -153,9 +165,7 @@ namespace aslam {
 
             		outRhs.segment(rowBase, rows) -= b_u.segment(i*rows, rows);
             	}
-            }
-            
-            
+            }    
             //std::cout << "OutHessian" << outHessian.toDense() << std::endl;
             
             // show outRhs:

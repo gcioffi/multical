@@ -1,4 +1,5 @@
 #include <vector>
+#include <numeric>
 #include <opencv2/core/core.hpp>
 #include <aslam/cameras/GridCalibrationTargetObservation.hpp>
 
@@ -9,7 +10,8 @@ GridCalibrationTargetObservation::GridCalibrationTargetObservation(
     GridCalibrationTargetBase::Ptr target, cv::Mat image)
     : _imRows(0),
       _imCols(0),
-      _T_t_c_isSet(false)  {
+      _T_t_c_isSet(false),  
+      _targetId(0) {
   setImage(image);
   setTarget(target);
 }
@@ -18,7 +20,8 @@ GridCalibrationTargetObservation::GridCalibrationTargetObservation(
     GridCalibrationTargetBase::Ptr target)
     : _imRows(0),
       _imCols(0),
-      _T_t_c_isSet(false)  {
+      _T_t_c_isSet(false),  
+      _targetId(0) {
   setTarget(target);
 }
 
@@ -193,13 +196,18 @@ void GridCalibrationTargetObservation::clearImage() {
 }
 
 /// \brief return true if the class has at least one successful observation
-bool GridCalibrationTargetObservation::hasSuccessfulObservation() const {
-  for (unsigned int i=0; i < _success.size(); i++) {
-    if (_success[i]) {
-      return true;
-    }
-  }
-  return false;
+int GridCalibrationTargetObservation::numberSuccessfulObservation() const {
+  return std::accumulate(_success.begin(), _success.end(), 0); 
+}
+
+int GridCalibrationTargetObservation::targetId() const 
+{
+  return _targetId; 
+}
+
+void GridCalibrationTargetObservation::setTargetId(const int targetId)
+{
+  _targetId = targetId;
 }
 
 }  // namespace cameras

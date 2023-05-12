@@ -102,8 +102,6 @@ void marginalize(
 
 		  qrSolver.evaluateError(1, useMEstimator);
 		  qrSolver.buildSystem(1, useMEstimator);
-
-
 		  const Eigen::MatrixXd& jacobian = qrSolver.getJacobian();
 		  const Eigen::VectorXd& b = qrSolver.e();
 

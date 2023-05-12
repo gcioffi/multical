@@ -92,11 +92,21 @@ template<class SPLINE_T>
 void BSplineMotionError<SPLINE_T>::buildHessianImplementation(
     SparseBlockMatrix & outHessian, Eigen::VectorXd & outRhs) {
 
+  // debug
+  std::cout << "In cv error terms buildHessianImplementation\n";
+  // end
+
   // get the coefficients:
   Eigen::MatrixXd coeff = _splineDV->spline().coefficients();
   // create a column vector of spline coefficients
   int dim = coeff.rows();
   int seg = coeff.cols();
+
+  // debug
+  std::cout << "dim :" << dim << "\n";
+  std::cout << "seg :" << seg << "\n";
+  // end
+
   // build a vector of coefficients:
   Eigen::VectorXd c(dim * seg);
   // rows are spline dimension

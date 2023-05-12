@@ -76,6 +76,10 @@ namespace aslam {
 
     void ErrorTermDs::buildHessianImplementation(SparseBlockMatrix& outHessian, Eigen::VectorXd& outRhs, bool useMEstimator)
     {
+      // debug
+      // std::cout << "In ErrorTermDs buildHessianImplementation\n";
+      // end
+
       JacobianContainer J(dimension());
       _evalJacobianTimer.start();
       evaluateJacobians(J);

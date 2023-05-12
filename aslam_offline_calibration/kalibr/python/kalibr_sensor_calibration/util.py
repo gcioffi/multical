@@ -1,33 +1,33 @@
-import StringIO
 import colorsys
 import matplotlib.patches as patches
 import pylab as pl
 import sys
 from matplotlib.backends.backend_pdf import PdfPages
+try:
+    # Python 2
+    from cStringIO import StringIO
+except ImportError:
+    # Python 3
+    from io import StringIO
 
 import numpy as np
 import open3d as o3d
 from sm import PlotCollection
 
-import plots as plots
+from . import plots
 
 
 def printErrorStatistics(cself, dest=sys.stdout):
     # Reprojection errors
-    print >> dest, "Normalized Residuals\n----------------------------"
+    print("Normalized Residuals\n----------------------------", file=dest)
     try:
         for lidarIdx, lidar in enumerate(cself.LiDARList):
             e2 = np.array(
                 [np.sqrt(e.evaluateError()) for p in lidar.targetObs for e in
                  p.errorTerms])
             if e2.size:
-                print >> dest, "Distance error (LiDAR{0}):    count: {1}," \
-                               " mean: {2}, median: {3}, std: {4}".format(
-                    lidarIdx,
-                    e2.shape[0],
-                    np.mean(e2),
-                    np.median(e2),
-                    np.std(e2))
+                print("Distance error (LiDAR{0}):     count: {1}, mean {2}, median {3}, std: {4}".format(
+                    lidarIdx, e2.shape[0], np.mean(e2), np.median(e2), np.std(e2) ), file=dest)
     except:
         pass
 
@@ -35,51 +35,26 @@ def printErrorStatistics(cself, dest=sys.stdout):
         if len(cam.allReprojectionErrors) > 0:
             e2 = np.array([np.sqrt(rerr.evaluateError()) for reprojectionErrors in cam.allReprojectionErrors for rerr in
                            reprojectionErrors])
-            print >> dest, "Reprojection error (cam{0}):    count: {1}, mean: {2}, median: {3}, std: {4}".format(cidx,
-                                                                                                                 e2.shape[
-                                                                                                                     0],
-                                                                                                                 np.mean(
-                                                                                                                     e2),
-                                                                                                                 np.median(
-                                                                                                                     e2),
-                                                                                                                 np.std(
-                                                                                                                     e2))
+            print("Reprojection error (cam{0}):     mean {1}, median {2}, std: {3}".format(cidx, np.mean(e2), np.median(e2), np.std(e2) ), file=dest)
         else:
-            print >> dest, "Reprojection error (cam{0}):     no corners".format(cidx)
+            print("Reprojection error (cam{0}):     no corners".format(cidx), file=dest)
 
     for iidx, imu in enumerate(cself.ImuList):
         # Gyro errors
         e2 = np.array([np.sqrt(e.evaluateError()) for e in imu.gyroErrors])
-        print >> dest, "Gyroscope error (imu{0}):    count: {1}, mean: {2}, median: {3}, std: {4}".format(iidx,
-                                                                                                          e2.shape[0],
-                                                                                                          np.mean(e2),
-                                                                                                          np.median(e2),
-                                                                                                          np.std(e2))
+        print("Gyroscope error (imu{0}):        mean {1}, median {2}, std: {3}".format(iidx, np.mean(e2), np.median(e2), np.std(e2)), file=dest)
         # Accelerometer errors
         e2 = np.array([np.sqrt(e.evaluateError()) for e in imu.accelErrors])
-        print >> dest, "Accelerometer error (imu{0}):    count: {1}, mean: {2}, median: {3}, std: {4}".format(iidx,
-                                                                                                              e2.shape[
-                                                                                                                  0],
-                                                                                                              np.mean(
-                                                                                                                  e2),
-                                                                                                              np.median(
-                                                                                                                  e2),
-                                                                                                              np.std(
-                                                                                                                  e2))
+        print("Accelerometer error (imu{0}):    mean {1}, median {2}, std: {3}".format(iidx, np.mean(e2), np.median(e2), np.std(e2)), file=dest)
 
-    print >> dest, ""
-    print >> dest, "Residuals\n----------------------------"
+    print("", file=dest)
+    print("Residuals\n----------------------------", file=dest)
     try:
         for lidarIdx, lidar in enumerate(cself.LiDARList):
             e2 = np.array([np.linalg.norm(e.error()) for p in lidar.targetObs for e in p.errorTerms])
             if e2.size:
-                print >> dest, "Distance error (LiDAR{0}) [m]:    count: {1}, " \
-                               "mean: {2}, median: {3}, std: {4}".format(
-                    lidarIdx,
-                    e2.shape[0],
-                    np.mean(e2),
-                    np.median(e2),
-                    np.std(e2))
+                print("Distance error (LiDAR{0}):     count: {1}, mean {2}, median {3}, std: {4}".format(
+                    lidarIdx, e2.shape[0], np.mean(e2), np.median(e2), np.std(e2) ), file=dest)
     except:
         pass
 
@@ -87,53 +62,43 @@ def printErrorStatistics(cself, dest=sys.stdout):
         if len(cam.allReprojectionErrors) > 0:
             e2 = np.array([np.linalg.norm(rerr.error()) for reprojectionErrors in cam.allReprojectionErrors for rerr in
                            reprojectionErrors])
-            print >> dest, "Reprojection error (cam{0}) [px]:    count: {1}, mean: {2}, median: {3}, std: {4}".format(
-                cidx, e2.shape[0], np.mean(e2), np.median(e2), np.std(e2))
+            print("Reprojection error (cam{0}) [px]:     mean {1}, median {2}, std: {3}".format(cidx, np.mean(e2), np.median(e2), np.std(e2) ), file=dest)
         else:
-            print >> dest, "Reprojection error (cam{0}) [px]:     no corners".format(cidx)
+            print("Reprojection error (cam{0}) [px]:     no corners".format(cidx), file=dest)
 
     for iidx, imu in enumerate(cself.ImuList):
         # Gyro errors
         e2 = np.array([np.linalg.norm(e.error()) for e in imu.gyroErrors])
-        print >> dest, "Gyroscope error (imu{0}) [rad/s]:    count: {1}, mean: {2}, median: {3}, std: {4}".format(iidx,
-                                                                                                                  e2.shape[
-                                                                                                                      0],
-                                                                                                                  np.mean(
-                                                                                                                      e2),
-                                                                                                                  np.median(
-                                                                                                                      e2),
-                                                                                                                  np.std(
-                                                                                                                      e2))
+        print("Gyroscope error (imu{0}) [rad/s]:     mean {1}, median {2}, std: {3}".format(iidx, np.mean(e2), np.median(e2), np.std(e2)), file=dest)
         # Accelerometer errors
         e2 = np.array([np.linalg.norm(e.error()) for e in imu.accelErrors])
-        print >> dest, "Accelerometer error (imu{0}) [m/s^2]:    count: {1}, mean: {2}, median: {3}, std: {4}".format(
-            iidx, e2.shape[0], np.mean(e2), np.median(e2), np.std(e2))
+        print("Accelerometer error (imu{0}) [m/s^2]: mean {1}, median {2}, std: {3}".format(iidx, np.mean(e2), np.median(e2), np.std(e2)), file=dest)
 
 
 def printGravity(cself):
     print
-    print "Gravity vector: (in target coordinates): [m/s^2]"
-    print cself.gravityDv.toEuclidean()
+    print("Gravity vector: (in target coordinates): [m/s^2]")
+    print( cself.gravityDv.toEuclidean())
 
 
 def printResults(cself, withCov=False):
     for tartgetId, target in enumerate(cself.targets):
-        print
-        print "Transformation T_target{0}_world (world to target{0}, T_t_w): ".format(tartgetId)
-        print target.getResultTrafoWorldToTarget()
+        print()
+        print( "Transformation T_target{0}_world (world to target{0}, T_t_w): ".format(tartgetId))
+        print( target.getResultTrafoWorldToTarget())
 
     reference_sensor = cself.reference_sensor
     try:
         for lidarNr, lidar in enumerate(cself.LiDARList):
-            print
-            print "Transformation T_lidar{0}_{1} ({1} to lidar{0}, T_l_b): ".format(lidarNr, reference_sensor)
-            print lidar.getTransformationReferenceToLiDAR().T()
+            print()
+            print( "Transformation T_lidar{0}_{1} ({1} to lidar{0}, T_l_b): ".format(lidarNr, reference_sensor))
+            print( lidar.getTransformationReferenceToLiDAR().T())
 
             if not cself.noTimeCalibration:
-                print
-                print "lidar{0} to {1} time: [s] (t_{1} = t_lidar + shift)".format(lidarNr, reference_sensor)
-                print lidar.lidarOffsetDv.toScalar()
-                print
+                print()
+                print( "lidar{0} to {1} time: [s] (t_{1} = t_lidar + shift)".format(lidarNr, reference_sensor))
+                print( lidar.lidarOffsetDv.toScalar())
+                print()
     except:
         pass
 
@@ -141,26 +106,26 @@ def printResults(cself, withCov=False):
     for camNr in range(0, nCams):
         T_cam_ref = cself.CameraChain.getTransformationReferenceToCam(camNr)
 
-        print
-        print "Transformation T_cam{0}_{1} ({1} to cam{0}, T_c_b): ".format(camNr, reference_sensor)
+        print()
+        print( "Transformation T_cam{0}_{1} ({1} to cam{0}, T_c_b): ".format(camNr, reference_sensor))
         if withCov and camNr == 0:
-            print "\t quaternion: ", T_cam_ref.q(), " +- ", cself.std_trafo_ic[0:3]
-            print "\t translation: ", T_cam_ref.t(), " +- ", cself.std_trafo_ic[3:]
-        print T_cam_ref.T()
+            print( "\t quaternion: ", T_cam_ref.q(), " +- ", cself.std_trafo_ic[0:3])
+            print( "\t translation: ", T_cam_ref.t(), " +- ", cself.std_trafo_ic[3:])
+        print( T_cam_ref.T())
 
         if not cself.noTimeCalibration:
-            print
-            print "cam{0} to {1} time: [s] (t_{1} = t_cam + shift)".format(camNr, reference_sensor)
-            print cself.CameraChain.getResultTimeShift(camNr),
+            print()
+            print( "cam{0} to {1} time: [s] (t_{1} = t_cam + shift)".format(camNr, reference_sensor))
+            print( cself.CameraChain.getResultTimeShift(camNr),)
 
             if withCov:
-                print " +- ", cself.std_times[camNr]
+                print( " +- ", cself.std_times[camNr])
             else:
-                print
+                print()
 
-    print
+    print()
     for (imuNr, imu) in enumerate(cself.ImuList):
-        print "IMU{0}:\n".format(imuNr), "----------------------------"
+        print( "IMU{0}:\n".format(imuNr), "----------------------------")
         imu.getImuConfig().printDetails()
 
 
@@ -175,10 +140,10 @@ def printBaselines(self):
             else:
                 isFixed = ""
 
-            print
-            print "Baseline (cam{0} to cam{1}): [m] {2}".format(camNr, camNr + 1, isFixed)
-            print T.T()
-            print baseline, "[m]"
+            print()
+            print( "Baseline (cam{0} to cam{1}): [m] {2}".format(camNr, camNr + 1, isFixed))
+            print( T.T())
+            print( baseline, "[m]")
 
 
 def generateReport(cself, filename="report.pdf", showOnScreen=True):
@@ -288,90 +253,90 @@ def saveResultTxt(cself, filename='cam_imu_result.txt'):
 
 
 def printResultTxt(cself, stream=sys.stdout):
-    print >> stream, "Calibration results"
-    print >> stream, "==================="
+    print("Calibration results", file=stream)
+    print("===================", file=stream) 
     printErrorStatistics(cself, stream)
-    print >> stream, ""
+    print("", file=stream) 
 
     reference_sensor = cself.reference_sensor
     for tartgetId, target in enumerate(cself.targets):
-        print >> stream, ""
-        print >> stream, "Transformation world to target{0}: ".format(tartgetId)
-        print >> stream, target.getResultTrafoWorldToTarget()
-        print >> stream, ""
+        print("", file=stream)
+        print("Transformation world to target{0}: ".format(tartgetId), file=stream)
+        print(target.getResultTrafoWorldToTarget(), file=stream)
+        print("", file=stream)
 
     try:
         for lidarNr, lidar in enumerate(cself.LiDARList):
-            print >> stream, ""
-            print >> stream, "Transformation {1} to lidar{0}: ".format(lidarNr, reference_sensor)
-            print >> stream, lidar.getTransformationReferenceToLiDAR().T()
+            print("", file=stream)
+            print("Transformation {1} to lidar{0}: ".format(lidarNr, reference_sensor), file=stream)
+            print(lidar.getTransformationReferenceToLiDAR().T(), file=stream)
 
             if not cself.noTimeCalibration:
-                print >> stream, ""
-                print >> stream, "lidar{0} to {1} time: [s] (t_{1} = t_lidar + shift)".format(lidarNr, reference_sensor)
-                print >> stream, lidar.lidarOffsetDv.toScalar()
-                print >> stream, ""
+                print("", file=stream)
+                print("lidar{0} to {1} time: [s] (t_{1} = t_lidar + shift)".format(lidarNr, reference_sensor), file=stream)
+                print(lidar.lidarOffsetDv.toScalar(), file=stream)
+                print("", file=stream)
     except:
         pass
 
-            # Calibration results
+    # Calibration results
     nCams = len(cself.CameraChain.camList)
     for camNr in range(0, nCams):
         T = cself.CameraChain.getTransformationReferenceToCam(camNr)
-        print >> stream, ""
-        print >> stream, "Transformation (cam{0}):".format(camNr)
-        print >> stream, "-----------------------"
-        print >> stream, "T_cam{0}_{1}:  ({1} to cam{0}): ".format(camNr, reference_sensor)
-        print >> stream, T.T()
-        print >> stream, ""
-        print >> stream, "T_{1}_cam{0}:  (cam{0} to {1}): ".format(camNr, reference_sensor)
-        print >> stream, T.inverse().T()
+        print("", file=stream)
+        print("Transformation (cam{0}):".format(camNr), file=stream)
+        print("-----------------------", file=stream)
+        print("T_cam{0}_{1}:  ({1} to cam{0}): ".format(camNr, reference_sensor), file=stream)
+        print(T.T(), file=stream)
+        print("", file=stream)
+        print("T_{1}_cam{0}:  (cam{0} to {1}): ".format(camNr, reference_sensor), file=stream)
+        print(T.inverse().T(), file=stream)
 
         # Time
-        print >> stream, ""
-        print >> stream, "timeshift cam{0} to {1}: [s] (t_imu = t_cam + shift)".format(camNr, reference_sensor)
-        print >> stream, cself.CameraChain.getResultTimeShift(camNr)
-        print >> stream, ""
+        print("", file=stream)
+        print("timeshift cam{0} to {1}: [s] (t_imu = t_cam + shift)".format(camNr, reference_sensor), file=stream)
+        print(cself.CameraChain.getResultTimeShift(camNr), file=stream)
+        print("", file=stream)
 
     # print all baselines in the camera chain
     if nCams > 1:
-        print >> stream, "Baselines:"
-        print >> stream, "----------"
+        print("Baselines:", file=stream)
+        print("----------", file=stream)
 
         for camNr in range(0, nCams - 1):
             T, baseline = cself.CameraChain.getResultBaseline(camNr, camNr + 1)
-            print >> stream, "Baseline (cam{0} to cam{1}): ".format(camNr, camNr + 1)
-            print >> stream, T.T()
-            print >> stream, "baseline norm: ", baseline, "[m]"
-            print >> stream, ""
+            print("Baseline (cam{0} to cam{1}): ".format(camNr, camNr + 1), file=stream)
+            print(T.T(), file=stream)
+            print("baseline norm: ", baseline, "[m]", file=stream)
+            print("", file=stream)
 
     if cself.ImuList:
         # Gravity
-        print >> stream, ""
-        print >> stream, "Gravity vector in target coords: [m/s^2]"
-        print >> stream, cself.gravityDv.toEuclidean()
+        print("", file=stream)
+        print("Gravity vector in target coords: [m/s^2]", file=stream)
+        print(cself.gravityDv.toEuclidean(), file=stream)
 
-    print >> stream, ""
-    print >> stream, ""
-    print >> stream, "Calibration configuration"
-    print >> stream, "========================="
-    print >> stream, ""
+    print("", file=stream)
+    print("", file=stream)
+    print("Calibration configuration", file=stream)
+    print("=========================", file=stream)
+    print("", file=stream)
 
     for camNr, cam in enumerate(cself.CameraChain.camList):
-        print >> stream, "cam{0}".format(camNr)
-        print >> stream, "-----"
+        print("cam{0}".format(camNr), file=stream)
+        print("-----", file=stream)
         cam.camConfig.printDetails(stream)
-        print >> stream, ""
+        print("", file=stream)
 
-        print >> stream, ""
-    print >> stream, ""
-    print >> stream, "IMU configuration"
-    print >> stream, "================="
-    print >> stream, ""
+        print("", file=stream)
+    print("", file=stream)
+    print("IMU configuration", file=stream)
+    print("=================", file=stream)
+    print("", file=stream)
     for (imuNr, imu) in enumerate(cself.ImuList):
-        print >> stream, "IMU{0}:\n".format(imuNr), "----------------------------"
+        print("IMU{0}:\n".format(imuNr), "----------------------------", file=stream)
         imu.getImuConfig().printDetails(stream)
-        print >> stream, ""
+        print("", file=stream)
 
 def showPointCloud(pointCloud, geometries=[], window_name=''):
     visualizer = o3d.visualization.Visualizer()

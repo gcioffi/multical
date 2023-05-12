@@ -1,7 +1,7 @@
 import numpy as np
 from sensor_msgs import point_cloud2
 
-from DatasetReaderWrapper import BagDatasetReaderWrapper
+from .DatasetReaderWrapper import BagDatasetReaderWrapper
 
 
 class LiDARDataParser:

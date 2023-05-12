@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   sm_boost
   sm_eigen
   python_module
+  aslam_time
+  sm_opencv
+  aslam_cv_python
 )
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization system)
@@ -28,6 +31,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${Boost
 
 add_library(${PROJECT_NAME} 
   src/GridCalibrationTargetAprilgrid.cpp
+  src/MultipleTargetAprilGridDetector.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 

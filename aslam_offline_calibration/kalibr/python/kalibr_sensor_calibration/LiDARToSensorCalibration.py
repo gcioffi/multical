@@ -7,7 +7,7 @@ import numpy as np
 import aslam_backend as aopt
 import sm
 import kalibr_errorterms as ket
-import util as util
+from . import util
 
 
 EstepResult = namedtuple('EstepResult', ['m0', 'm1', 'nx'])

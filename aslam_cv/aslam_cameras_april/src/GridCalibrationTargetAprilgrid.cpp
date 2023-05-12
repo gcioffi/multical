@@ -322,6 +322,16 @@ bool GridCalibrationTargetAprilgrid::computeObservation(
   return success;
 }
 
+GridCalibrationTargetAprilgrid::AprilgridOptions GridCalibrationTargetAprilgrid::getOptions()
+{
+  return _options;
+}
+
+boost::shared_ptr<AprilTags::TagDetector> GridCalibrationTargetAprilgrid::getTagDetector()
+{
+  return _tagDetector;
+}
+
 }  // namespace cameras
 }  // namespace aslam
 

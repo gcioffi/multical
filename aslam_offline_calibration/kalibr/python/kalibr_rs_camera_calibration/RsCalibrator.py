@@ -318,7 +318,7 @@ class RsCalibrator(object):
         # add a reprojection error for every corner of each observation
         for observation in self.__observations:
             # only process successful observations of a pattern
-            if observation.hasSuccessfulObservation():
+            if observation.numberSuccessfulObservation():
                 # add a frame
                 frame = self.__cameraModelFactory.frameType()
                 frame.setGeometry(self.__camera)

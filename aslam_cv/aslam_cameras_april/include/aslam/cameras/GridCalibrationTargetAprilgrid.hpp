@@ -91,6 +91,8 @@ class GridCalibrationTargetAprilgrid : public GridCalibrationTargetBase {
   bool computeObservation(const cv::Mat & image,
                           Eigen::MatrixXd & outImagePoints,
                           std::vector<bool> &outCornerObserved) const;
+  AprilgridOptions getOptions();
+  boost::shared_ptr<AprilTags::TagDetector> getTagDetector();
 
  private:
   /// \brief initialize the object

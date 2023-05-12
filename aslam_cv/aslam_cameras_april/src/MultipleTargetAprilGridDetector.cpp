@@ -111,6 +111,11 @@ namespace aslam {
             // detect the tags
             std::vector <AprilTags::TagDetection> detections = _target->getTagDetector()->extractTags(image);
 
+            // debug
+            // std::cout << "detections.size() = " << detections.size() << "\n";
+            // std::cout << "_target->getOptions().minTagsForValidObs = " << _target->getOptions().minTagsForValidObs << "\n";
+            // end
+
             /* handle the case in which a tag is identified but not all tag
              * corners are in the image (all data bits in image but border
              * outside). tagCorners should still be okay as apriltag-lib
@@ -155,11 +160,21 @@ namespace aslam {
             if (detections.size() < _target->getOptions().minTagsForValidObs) {
                 success = false;
 
+                // debug
+                // std::cout << "I'm here 3\n";
+                // std::cout << "success: " << success << "\n";
+                // end
+
                 //immediate exit if we dont need to show video for debugging...
                 //if video is shown, exit after drawing video...
                 if (!_target->getOptions().showExtractionVideo)
                     return success;
             }
+
+            // debug
+            // std::cout << "I'm here 4\n";
+            // std::cout << "success: " << success << "\n";
+            // end
 
             //sort detections by tagId
             std::sort(detections.begin(), detections.end(),
@@ -172,7 +187,7 @@ namespace aslam {
                     if (detections[i].id == detections[i + 1].id) {
 
                         cv::Mat imageCopy = image.clone();
-                        cv::cvtColor(imageCopy, imageCopy, CV_GRAY2RGB);
+                        cv::cvtColor(imageCopy, imageCopy, cv::COLOR_GRAY2RGB);
 
                         int duplicated_id = detections[i].id;
                         //mark all duplicate tags in image
@@ -187,7 +202,7 @@ namespace aslam {
                         }
 
                         cv::putText(imageCopy, "Duplicate Apriltags detected. Hide them.",
-                                    cv::Point(50, 50), CV_FONT_HERSHEY_SIMPLEX, 0.8,
+                                    cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                                     CV_RGB(255, 0, 0), 2, 8, false);
                         std::string file_name = "Duplicate_Apriltags_"+std::to_string(stamp.toSec())+".jpg";
                         cv::imwrite(file_name, imageCopy);  // OpenCV call
@@ -225,12 +240,12 @@ namespace aslam {
             if (_target->getOptions().doSubpixRefinement && success)
                 cv::cornerSubPix(
                         image, tagCorners, cv::Size(2, 2), cv::Size(-1, -1),
-                        cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+                        cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.1));
 
             if (_target->getOptions().showExtractionVideo) {
                 //image with refined (blue) and raw corners (red)
                 cv::Mat imageCopy1 = image.clone();
-                cv::cvtColor(imageCopy1, imageCopy1, CV_GRAY2RGB);
+                cv::cvtColor(imageCopy1, imageCopy1, cv::COLOR_GRAY2RGB);
                 for (unsigned i = 0; i < detections.size(); i++)
                     for (unsigned j = 0; j < 4; j++) {
                         //raw apriltag corners
@@ -245,7 +260,7 @@ namespace aslam {
 
                         if (!success)
                             cv::putText(imageCopy1, "Detection failed! (frame not used)",
-                                        cv::Point(50, 50), CV_FONT_HERSHEY_SIMPLEX, 0.8,
+                                        cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                                         CV_RGB(255, 0, 0), 3, 8, false);
                     }
 
@@ -254,14 +269,14 @@ namespace aslam {
 
                 /* copy image for modification */
                 cv::Mat imageCopy2 = image.clone();
-                cv::cvtColor(imageCopy2, imageCopy2, CV_GRAY2RGB);
+                cv::cvtColor(imageCopy2, imageCopy2, cv::COLOR_GRAY2RGB);
                 /* highlight detected tags in image */
                 for (unsigned i = 0; i < detections.size(); i++) {
                     detections[i].draw(imageCopy2);
 
                     if (!success)
                         cv::putText(imageCopy2, "Detection failed! (frame not used)",
-                                    cv::Point(50, 50), CV_FONT_HERSHEY_SIMPLEX, 0.8,
+                                    cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                                     CV_RGB(255, 0, 0), 3, 8, false);
                 }
 
@@ -323,6 +338,10 @@ namespace aslam {
                 }
             }
 
+            // debug
+            // std::cout << "outObservation.size() = " << outObservation.size() << "\n";
+            // end
+
             for(int i =0; i < outObservation.size();)
             {
                 if(outObservation[i].numberSuccessfulObservation() < _target->getOptions().minTagsForValidObs)
@@ -334,6 +353,11 @@ namespace aslam {
                     i++;
                 }
             }
+
+            // debug
+            // std::cout << "outObservation.size() = " << outObservation.size() << "\n";
+            // end
+
             return outObservation.size();
         }
 
@@ -343,6 +367,11 @@ namespace aslam {
 
             // find calibration target corners
             bool success = findTargetNoTransformation(image, stamp, outObservation);
+
+            // debug
+            // std::cout << "I'm here 2\n";
+            // std::cout << "success: " << success << "\n";
+            // end
 
             if(success)
             {
@@ -412,7 +441,7 @@ namespace aslam {
             // show plot of reprojected corners
             if (_options.plotCornerReprojection) {
                 cv::Mat imageCopy1 = image.clone();
-                cv::cvtColor(imageCopy1, imageCopy1, CV_GRAY2RGB);
+                cv::cvtColor(imageCopy1, imageCopy1, cv::COLOR_GRAY2RGB);
 
                 if (success) {
                     for(const auto& outObs: outObservation) {
@@ -426,7 +455,7 @@ namespace aslam {
 
                 } else {
                     cv::putText(imageCopy1, "Detection failed! (frame not used)",
-                                cv::Point(50, 50), CV_FONT_HERSHEY_SIMPLEX, 0.8,
+                                cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                                 CV_RGB(255, 0, 0), 3, 8, false);
                 }
 
@@ -437,6 +466,11 @@ namespace aslam {
                     cv::waitKey(1);
                 }
             }
+
+            // debug
+            // std::cout << "I'm here 1\n";
+            // std::cout << "success: " << success << "\n";
+            // end
 
             return success;
         }

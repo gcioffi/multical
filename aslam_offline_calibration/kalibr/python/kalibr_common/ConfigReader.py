@@ -621,17 +621,30 @@ class LiDARParameters(SensorParametersBase):
         # get the data
         pass
 
-        
+
 class ImuSetParameters(ParametersBase):
-    def __init__(self, yamlFile, createYaml=False):
+    def __init__(self, yamlFile, reference_sensor_name, createYaml=False):
         ParametersBase.__init__(self, yamlFile, "ImuSetConfig", createYaml)
         self.imuCount = 0
-        
+        self.reference_sensor_name = reference_sensor_name
+
+    def numImus(self):
+        return len(self.data)
+
     def addImuParameters(self, imu_parameters, name=None):
         if name is None:
             name = "imu%d" % self.imuCount
         self.imuCount += 1
         self.data[name] = imu_parameters.getYamlDict()
+
+    @catch_keyerror
+    def getImuParameters(self, nr):
+        if nr >= self.numImus():
+            self.raiseError("out-of-range: IMU index not in IMU set!")
+
+        param = ImuParameters("TEMP_CONFIG", self.reference_sensor_name, createYaml=True)
+        param.setYamlDict(self.data['imu{0}'.format(nr)])
+        return param
 
 
 class CalibrationTargetParameters(ParametersBase):
@@ -709,6 +722,7 @@ class CalibrationTargetParameters(ParametersBase):
             
         elif targetType == 'aprilgrid':
             try:
+                numberTargets = self.data["numberTargets"]
                 tagRows = self.data["tagRows"]
                 tagCols = self.data["tagCols"]
                 tagSize = self.data["tagSize"]
@@ -725,10 +739,11 @@ class CalibrationTargetParameters(ParametersBase):
             if not isinstance(tagSpacing,float) or tagSpacing <= 0.0:
                 errList.append("invalid tagSpacing (float)")
                 
-            targetParams = {'tagRows': tagRows,
-                            'tagCols': tagCols,
-                            'tagSize': tagSize,
-                            'tagSpacing': tagSpacing,
+            targetParams = {'numberTargets': numberTargets, 
+                            'tagRows': tagRows, 
+                            'tagCols': tagCols, 
+                            'tagSize': tagSize, 
+                            'tagSpacing': tagSpacing, 
                             'targetType': targetType}
             
         return targetParams
@@ -757,118 +772,146 @@ class CalibrationTargetParameters(ParametersBase):
             print("    Size: {0} [m]".format(targetParams['tagSize']), file=dest)
             print("    Spacing {0} [m]".format( targetParams['tagSize']*targetParams['tagSpacing'] ), file=dest)
 
-
         
 class CameraChainParameters(ParametersBase):
-    def __init__(self, yamlFile, createYaml=False):
+    def __init__(self, yamlFile, reference_sensor_name, createYaml=False):
         ParametersBase.__init__(self, yamlFile, "CameraChainParameters", createYaml)
-    
+        self.reference_sensor_name = reference_sensor_name
+
     ###################################################
     # Accessors
     ###################################################
     def addCameraAtEnd(self, cam):
         if not isinstance(cam, CameraParameters):
             raise RuntimeError("addCamera() requires a CameraParameters object")
-        
+
         camNr = len(self.data)
         self.data["cam{0}".format(camNr)] = cam.getYamlDict()
-    
+
     @catch_keyerror
     def getCameraParameters(self, nr):
         if nr >= self.numCameras():
             self.raiseError("out-of-range: camera index not in camera chain!")
 
-        param = CameraParameters("TEMP_CONFIG", createYaml=True)
-        param.setYamlDict( self.data['cam{0}'.format(nr)] )
+        param = CameraParameters("TEMP_CONFIG", self.reference_sensor_name, createYaml=True)
+        param.setYamlDict(self.data['cam{0}'.format(nr)])
         return param
-    
+
     def setExtrinsicsLastCamToHere(self, camNr, extrinsics):
-        if camNr==0:
+        if camNr == 0:
             raise RuntimeError("setExtrinsicsLastCamToHere(): can't set extrinsics for first cam in chain (cam0=base)")
         if not isinstance(extrinsics, sm.Transformation):
             raise RuntimeError("setExtrinsicsLastCamToHere(): provide extrinsics as an sm.Transformation object")
-        
+
         self.data["cam{0}".format(camNr)]['T_cn_cnm1'] = extrinsics.T().tolist()
 
     @catch_keyerror
     def getExtrinsicsLastCamToHere(self, camNr):
-        if camNr==0:
-            raise RuntimeError("setExtrinsicsLastCamToHere(): can't get extrinsics for first camera in chain (cam0=base)")
-        
+        if camNr == 0:
+            raise RuntimeError(
+                "setExtrinsicsLastCamToHere(): can't get extrinsics for first camera in chain (cam0=base)")
+
         if camNr >= self.numCameras():
             self.raiseError("out-of-range: baseline index not in camera chain!")
-        
+
         try:
-            trafo = sm.Transformation( np.array(self.data["cam{0}".format(camNr)]['T_cn_cnm1']) )
-            t = trafo.T() #for error checking
+            trafo = sm.Transformation(np.array(self.data["cam{0}".format(camNr)]['T_cn_cnm1']))
+            t = trafo.T()  # for error checking
         except:
             self.raiseError("invalid camera baseline (cam{0} in {1})".format(camNr, self.yamlFile))
         return trafo
-    
-    def setExtrinsicsImuToCam(self, camNr, extrinsics):
+
+    def setExtrinsicsReferenceToCam(self, camNr, extrinsics):
         if not isinstance(extrinsics, sm.Transformation):
-            raise RuntimeError("setExtrinsicsImuToCam(): provide extrinsics as an sm.Transformation object")
-        
-        self.data["cam{0}".format(camNr)]['T_cam_imu'] = extrinsics.T().tolist()
-    
+            raise RuntimeError("setExtrinsicsReferenceToCam(): provide extrinsics as an sm.Transformation object")
+        cam_param = self.getCameraParameters(camNr)
+        cam_param.setExtrinsicsReferenceToHere(extrinsics)
+        self.data["cam{0}".format(camNr)] = cam_param.getYamlDict()
+
     @catch_keyerror
-    def getExtrinsicsImuToCam(self, camNr):      
+    def getExtrinsicsReferenceToCam(self, camNr):
         if camNr >= self.numCameras():
-            self.raiseError("out-of-range: T_imu_cam not in chain!")
-        
-        try:
-            trafo = sm.Transformation( np.array(self.data["cam{0}".format(camNr)]['T_cam_imu']) )
-            t = trafo.T() #for error checking
-        except:
-            self.raiseError("invalid T_cam_imu (cam{0} in {1})".format(camNr, self.yamlFile))
-        return trafo
-    
-    def checkTimeshiftCamImu(self, camNr, time_shift):
+            self.raiseError("out-of-range: cam{0} not in chain!".format(camNr))
+
+        cam_param = self.getCameraParameters(camNr)
+        return cam_param.getExtrinsicsReferenceToHere()
+
+    def checkTimeshiftToReference(self, camNr, time_shift):
         if camNr >= self.numCameras():
-            self.raiseError("out-of-range: imu-cam trafo not in chain!")
-    
-        if not isinstance(time_shift, float): 
-            self.raiseError("invalid timeshift cam-imu (cam{0} in {1})".format(camNr, self.yamlFile))
-            
+            self.raiseError("out-of-range: cam{0} not in chain!".format(camNr))
+
+        if not isinstance(time_shift, float):
+            self.raiseError("invalid timeshift (cam{0} in {1})".format(camNr, self.yamlFile))
+
     @catch_keyerror
-    def getTimeshiftCamImu(self, camNr):
-        self.checkTimeshiftCamImu(camNr, self.data["cam{0}".format(camNr)]["timeshift_cam_imu"])       
-        return self.data["cam{0}".format(camNr)]["timeshift_cam_imu"]
-    
-    def setTimeshiftCamImu(self, camNr, time_shift):
-        self.checkTimeshiftCamImu(camNr, time_shift)
-        self.data["cam{0}".format(camNr)]["timeshift_cam_imu"] = time_shift
+    def getTimeshiftToReference(self, camNr):
+        if camNr >= self.numCameras():
+            self.raiseError("out-of-range: cam{0} not in chain!".format(camNr))
+
+        cam_param = self.getCameraParameters(camNr)
+        return cam_param.getTimeshiftToReference()
+
+    def setTimeshiftToReference(self, camNr, time_shift):
+        self.checkTimeshiftToReference(camNr, time_shift)
+        cam_param = self.getCameraParameters(camNr)
+        cam_param.setTimeshiftToReference(time_shift)
+        self.data["cam{0}".format(camNr)] = cam_param.getYamlDict()
 
     def checkCamOverlaps(self, camNr, overlap_list):
         if camNr >= self.numCameras():
             self.raiseError("out-of-range: camera id of {0}".format(camNr))
-        
+
         for cam_id in overlap_list:
             if cam_id >= self.numCameras():
                 self.raiseError("out-of-range: camera id of {0}".format(cam_id))
 
     @catch_keyerror
     def getCamOverlaps(self, camNr):
-        self.checkCamOverlaps(camNr, self.data["cam{0}".format(camNr)]["cam_overlaps"])       
+        self.checkCamOverlaps(camNr, self.data["cam{0}".format(camNr)]["cam_overlaps"])
         return self.data["cam{0}".format(camNr)]["cam_overlaps"]
-    
+
     def setCamOverlaps(self, camNr, overlap_list):
         self.checkCamOverlaps(camNr, overlap_list)
         self.data["cam{0}".format(camNr)]["cam_overlaps"] = overlap_list
-        
+
     def numCameras(self):
         return len(self.data)
-    
+
     def printDetails(self, dest=sys.stdout):
         for camNr in range(0, self.numCameras()):
             print("Camera chain - cam{0}:".format(camNr))
             camConfig = self.getCameraParameters(camNr)
             camConfig.printDetails(dest)
-            
-            #print baseline if available
+
+            # print baseline if available
             try:
                 T = self.getExtrinsicsLastCamToHere(camNr)
                 print("  baseline:", T.T(), file=dest)
             except:
                 print("  baseline: no data available", file=dest)
                 pass
+
+
+class LiDARListParameters(ParametersBase):
+    def __init__(self, yamlFile, reference_sensor_name, createYaml=False):
+        ParametersBase.__init__(self, yamlFile, "LiDARListParameters", createYaml)
+        self.lidarCount = 0
+        self.reference_sensor_name = reference_sensor_name
+
+    def numLiDARs(self):
+        return len(self.data)
+
+    @catch_keyerror
+    def getLiDARParameters(self, nr):
+        if nr >= self.numLiDARs():
+            self.raiseError("out-of-range: LiDAR index not in LiDAR list!")
+
+        param = LiDARParameters("TEMP_CONFIG", self.reference_sensor_name, createYaml=True)
+        param.setYamlDict(self.data['lidar{0}'.format(nr)])
+        return param
+
+    def addLiDARParameters(self, parameters, name=None):
+        if name is None:
+            name = "lidar%d" % self.lidarCount
+        self.lidarCount += 1
+        self.data[name] = parameters.getYamlDict()

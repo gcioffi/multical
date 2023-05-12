@@ -38,7 +38,15 @@ namespace aslam {
     /// variable as dv.blockIndex()
     void ErrorTerm::buildHessian(SparseBlockMatrix& outHessian, Eigen::VectorXd& outRhs, bool useMEstimator)
     {
+      // debug
+      // std::cout << "buildHessianImplementation doing\n";
+      // end
+      
       buildHessianImplementation(outHessian, outRhs, useMEstimator);
+
+      // debug
+      // std::cout << "buildHessianImplementation done\n";
+      // end
     }
 
     /// \brief set the M-Estimator policy. This function takes a squared error

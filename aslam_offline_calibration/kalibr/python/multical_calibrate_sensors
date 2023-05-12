@@ -3,6 +3,8 @@
 import argparse
 import signal
 
+import sm
+import kalibr_common as kc
 from kalibr_sensor_calibration import *
 
 import numpy as np
@@ -227,16 +229,16 @@ def main():
             imu_model = imu_config.getModel()
             is_imu_reference = not imus and not is_camera_reference
             if imu_model == 'calibrated':
-                imus.append(sens.Imu(imu_config, parsed, is_imu_reference,
+                imus.append(Imu(imu_config, parsed, is_imu_reference,
                                      parsed.estimate_imu_delay))
             elif imu_model == 'scale-misalignment':
                 imus.append(
-                    sens.ScaledMisalignedImu(imu_config, parsed,
+                    ScaledMisalignedImu(imu_config, parsed,
                                              is_imu_reference,
                                              parsed.estimate_imu_delay))
             elif imu_model == 'scale-misalignment-size-effect':
                 imus.append(
-                    sens.ScaledMisalignedSizeEffectImu(imu_config, parsed,
+                    ScaledMisalignedSizeEffectImu(imu_config, parsed,
                                                        is_imu_reference,
                                                        parsed.estimate_imu_delay))
             else:
@@ -256,9 +258,9 @@ def main():
     print("Initializing calibration target:")
     targetConfig.printDetails()
 
-    grid = sens.initCalibrationTarget(targetConfig,
+    grid = initCalibrationTarget(targetConfig,
                                       showExtraction=parsed.showextraction)
-    targets = [sens.CalibrationTarget(grid[0]) for _ in range(grid[1])]
+    targets = [CalibrationTarget(grid[0]) for _ in range(grid[1])]
 
     iCal.registerCalibrationTarget(targets)
 
@@ -268,7 +270,7 @@ def main():
                                              reference_sensor_name)
         for idx in range(0, LiDARConfig.numLiDARs()):
             config = LiDARConfig.getLiDARParameters(idx)
-            lidar = sens.LiDAR(config, parsed, targets)
+            lidar = LiDAR(config, parsed, targets)
             iCal.registerLiDAR(lidar)
 
         has_lidar = True
@@ -276,7 +278,7 @@ def main():
     print("Initializing camera chain:")
     chain = kc.CameraChainParameters(parsed.chain_yaml, reference_sensor_name)
     chain.printDetails()
-    camChain = sens.CameraChain(chain, targets, parsed, is_camera_reference)
+    camChain = CameraChain(chain, targets, parsed, is_camera_reference)
 
     # register sensors with calibrator
     iCal.registerCamChain(camChain)

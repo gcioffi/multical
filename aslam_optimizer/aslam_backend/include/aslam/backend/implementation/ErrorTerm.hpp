@@ -96,16 +96,64 @@ namespace aslam {
     template<int C>
     void ErrorTermFs<C>::buildHessianImplementation(SparseBlockMatrix& outHessian, Eigen::VectorXd& outRhs, bool useMEstimator)
     {
+      // debug
+      // std::cout << "In ErrorTermFs.hpp buildHessianImplementation doing \n";
+      // end
+
       _evalJacobianTimer.start();
+
+      // debug
+      // std::cout << "1 \n";
+      // end
+
       JacobianContainer J(C);
+
+      // debug
+      // std::cout << "2 \n";
+      // end
+
       evaluateJacobians(J);
+
+      // debug
+      // std::cout << "3 \n";
+      // end
+
       _evalJacobianTimer.stop();
+
+      // debug
+      // std::cout << "4 \n";
+      // end
+
       _buildHessianTimer.start();
+
+      // debug
+      // std::cout << "5 \n";
+      // end
+
       double sqrtWeight = 1.0;
       if (useMEstimator)
+      {
         sqrtWeight = sqrt(_mEstimatorPolicy->getWeight(getRawSquaredError()));
+        // debug
+        // std::cout << "6 \n";
+        // end
+      }
+
+      // debug
+      // std::cout << "7 \n";
+      // end
+      
       J.evaluateHessian(_error, sqrtWeight * _sqrtInvR, outHessian, outRhs);
+
+      // debug
+      // std::cout << "8 \n";
+      // end
+
       _buildHessianTimer.stop();
+
+      // debug
+      // std::cout << "In ErrorTermFs.hpp buildHessianImplementation done \n";
+      // end
     }
 
     template<int C>

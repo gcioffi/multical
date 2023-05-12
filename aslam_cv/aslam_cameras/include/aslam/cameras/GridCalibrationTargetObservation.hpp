@@ -120,8 +120,11 @@ class GridCalibrationTargetObservation {
     _stamp = stamp;
   };
 
+  int targetId() const;
+  void setTargetId(const int targetId);
+
   /// \brief return true if the class has at least one successful observation
-  bool hasSuccessfulObservation() const;
+  int numberSuccessfulObservation() const;
 
  private:
   /// \brief the target being observed
@@ -152,7 +155,7 @@ class GridCalibrationTargetObservation {
   /// \brief has the extrinsics been set?
   bool _T_t_c_isSet;
 
-
+  int _targetId;
   ///////////////////////////////////////////////////
   // Serialization support
   ///////////////////////////////////////////////////
@@ -180,6 +183,7 @@ class GridCalibrationTargetObservation {
     ar >> BOOST_SERIALIZATION_NVP(_imCols);
     ar >> BOOST_SERIALIZATION_NVP(_stamp);
     ar >> BOOST_SERIALIZATION_NVP(_T_t_c_isSet);
+    ar >> BOOST_SERIALIZATION_NVP(_targetId);
   }
 
   template<class Archive>
@@ -193,6 +197,7 @@ class GridCalibrationTargetObservation {
     ar << BOOST_SERIALIZATION_NVP(_imCols);
     ar << BOOST_SERIALIZATION_NVP(_stamp);
     ar << BOOST_SERIALIZATION_NVP(_T_t_c_isSet);
+    ar << BOOST_SERIALIZATION_NVP(_targetId);
   }
 };
 

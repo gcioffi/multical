@@ -2,7 +2,7 @@ import numpy as np
 import open3d as o3d
 from skimage.measure import LineModelND, ransac
 
-from util import showPointCloud
+from .util import showPointCloud
 
 
 def extract_plane_points(point_cloud):

@@ -145,6 +145,9 @@ namespace aslam {
             // \todo Say how big the problem is.
             _options.verbose && std::cout << "The Jacobian matrix is " << dim << " x " << columnBase << std::endl;
 
+            // debug
+		    // std::cout << "I am here 1\n";
+		    // end
 
             // \todo initialize the trust region stuff.
 
@@ -197,6 +200,11 @@ namespace aslam {
             timeErr.start();
             evaluateError(true);
             timeErr.stop();
+
+            // debug
+		    // std::cout << "I am here 2\n";
+		    // end
+
             _p_J = _J;
             srv.JStart = _p_J;
             // *** while not done
@@ -211,6 +219,14 @@ namespace aslam {
             _trustRegionPolicy->setSolver(_solver);
             _trustRegionPolicy->optimizationStarting(_J);
 
+            // debug
+		    // std::cout << "I am here 3\n";
+		    // end
+
+            // debug
+            // int cnt = 0;
+            // end
+
             // Loop until convergence
             while (srv.iterations <  _options.maxIterations &&
                    srv.failedIterations < _options.maxIterations &&
@@ -218,9 +234,18 @@ namespace aslam {
                      fabs(deltaJ) > _options.convergenceDeltaJ) ||
                     linearSolverFailure)) {
 
+                // debug
+                // cnt++;
+                // std::cout<<"cnt: " << cnt << "\n";
+                // end
+
                 timeSolve.start();
                 bool solutionSuccess = _trustRegionPolicy->solveSystem(_J, previousIterationFailed, _options.nThreads, _dx);
                 timeSolve.stop();
+
+                // debug
+                // std::cout<<"success:" << solutionSuccess << "\n";
+                // end
 
                 if (!solutionSuccess) {
                     _options.verbose && std::cout << "[WARNING] System solution failed\n";

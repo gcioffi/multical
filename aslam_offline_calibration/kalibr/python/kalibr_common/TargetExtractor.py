@@ -27,7 +27,11 @@ def multicoreExtractionWrapper(detector, taskq, resultq, clearImages, noTransfor
             success, obs = detector.findTarget(stamp, np.array(image))
             
         if clearImages:
-            obs.clearImage()
+            if type(obs) is list:
+                for ob in obs:
+                    ob.clearImage()
+            else:
+                obs.clearImage()
         if success:
             resultq.put( (obs, idx) )
 
@@ -39,6 +43,10 @@ def extractCornersFromDataset(dataset, detector, multithreading=False, numProces
     # prepare progess bar
     iProgress = sm.Progress2(numImages)
     iProgress.sample()
+
+    # debug
+    # multithreading = False
+    # end
             
     if multithreading:   
         if not numProcesses:
@@ -92,8 +100,27 @@ def extractCornersFromDataset(dataset, detector, multithreading=False, numProces
                 success, observation = detector.findTargetNoTransformation(timestamp, np.array(image))
             else:
                 success, observation = detector.findTarget(timestamp, np.array(image))
+
+            # debug
+            # print('++++++++++++++++++++++++++++++++++++')
+            # print('success')
+            # print(success)
+            # if type(observation) is list:
+            #     print(observation[0].targetId())
+            # else:
+            #     print(observation.targetId())
+
+            # print('++++++++++++++++++++++++++++++++++++')
+
+            # assert False
+            # end
+
             if clearImages:
-                observation.clearImage()
+                if type(observation) is list:
+                    for obs in observation:
+                        obs.clearImage()
+                else:
+                    observation.clearImage()
             if success == 1:
                 targetObservations.append(observation)
             iProgress.sample()

@@ -61,14 +61,54 @@ namespace aslam {
       //       A little bit of effort should make this possible by initializing the structure and adding
       //       a mutex for each block and having writers for each jacobian that have a list of mutexes.
       //       Save it for later.
+      
+      // debug
+      // std::cout<<"BlockCholeskyLinearSystemSolver::buildSystem 0\n";
+      // end
+
       _H._M.clear(false);
       _rhs.setZero();
       std::vector<ErrorTerm*>::iterator it, it_end;
       it = _errorTerms.begin();
       it_end = _errorTerms.end();
+
+      // debug
+      // std::cout<<"BlockCholeskyLinearSystemSolver::buildSystem 1\n";
+
+      // std::vector<ErrorTerm*>::iterator it_db, it_end_db;
+      // it_db = _errorTerms.begin();
+      // it_end_db = _errorTerms.end();
+      // int i = 0;
+      // for (; it_db != it_end_db; ++it_db) 
+      // {
+      //   i++;
+      //   std::cout << "i: "  << i << "\n";
+      // }
+      // end
+
+      // debug
+      int cnt = 0;
+      std::cout << "_errorTerms.size(): " << _errorTerms.size() << "\n";
+      // end
       for (; it != it_end; ++it) {
+
+        // debug
+        // std::cout << "buildHessian doing\n";
+        cnt++;
+        std::cout << "cnt: " << cnt << "\n";
+        // end
+
         (*it)->buildHessian(_H._M, _rhs, useMEstimator);
+
+        // debug
+        // std::cout << "buildHessian done\n";
+        // end
       }
+
+      // debug
+      std::cout<<"Done for loop\n";
+      // std::cout<<"BlockCholeskyLinearSystemSolver::buildSystem 2\n";
+      // end
     }
 
     bool BlockCholeskyLinearSystemSolver::solveSystem(Eigen::VectorXd& outDx)
