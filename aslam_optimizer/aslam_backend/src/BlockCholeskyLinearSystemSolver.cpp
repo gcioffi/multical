@@ -87,15 +87,15 @@ namespace aslam {
       // end
 
       // debug
-      int cnt = 0;
-      std::cout << "_errorTerms.size(): " << _errorTerms.size() << "\n";
+      // int cnt = 0;
+      // std::cout << "_errorTerms.size(): " << _errorTerms.size() << "\n";
       // end
       for (; it != it_end; ++it) {
 
         // debug
         // std::cout << "buildHessian doing\n";
-        cnt++;
-        std::cout << "cnt: " << cnt << "\n";
+        // cnt++;
+        // std::cout << "cnt: " << cnt << "\n";
         // end
 
         (*it)->buildHessian(_H._M, _rhs, useMEstimator);
@@ -106,7 +106,7 @@ namespace aslam {
       }
 
       // debug
-      std::cout<<"Done for loop\n";
+      // std::cout<<"Done for loop\n";
       // std::cout<<"BlockCholeskyLinearSystemSolver::buildSystem 2\n";
       // end
     }

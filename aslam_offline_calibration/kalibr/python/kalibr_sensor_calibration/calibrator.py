@@ -88,7 +88,7 @@ class Calibrator(object):
 
         if self.LiDARList:
             num = 3
-            for i in xrange(1, num):
+            for i in range(1, num):
                 self.constructLiDARErrorTerms(0.3 / i,
                                               self.noTimeCalibration or i == 1)
                 optimize(self.problem, maxIterations=maxIterations//i)

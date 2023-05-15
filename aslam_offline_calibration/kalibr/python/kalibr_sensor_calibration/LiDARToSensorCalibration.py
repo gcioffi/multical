@@ -46,7 +46,7 @@ class LiDARToSensorCalibrator:
         errs = []
         self.problem.clearAllErrorTerms()
         if objective_type == 'pt2pt':
-            for i in xrange(m):
+            for i in range(m):
                 T_l_l = self.T_b_l_Dv.toExpression().inverse() * \
                         aopt.TransformationExpression(self._sensor_tfs[i]) * \
                         self.T_b_l_Dv.toExpression()
@@ -137,7 +137,7 @@ class LiDARToSensorCalibrator:
 
             numPoints = self._source.shape[0]
             source = np.hstack([self._source, np.ones((numPoints, 1), dtype=self._source.dtype)])
-            t_source = np.array([np.dot(T_l_b, np.dot(self._sensor_tfs[i], np.dot(T_b_l, source[i]))) for i in xrange(numPoints)])
+            t_source = np.array([np.dot(T_l_b, np.dot(self._sensor_tfs[i], np.dot(T_b_l, source[i]))) for i in range(numPoints)])
             t_source = t_source[:, :3]
             util.showPointCloud([t_source, target])
             fsource = feature_fn(t_source)

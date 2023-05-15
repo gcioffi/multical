@@ -152,10 +152,10 @@ def generateReport(cself, filename="report.pdf", showOnScreen=True):
     offset = 3010
 
     # Output calibration results in text form.
-    sstream = StringIO.StringIO()
+    sstream = StringIO()
     printResultTxt(cself, sstream)
 
-    text = [line for line in StringIO.StringIO(sstream.getvalue())]
+    text = [line for line in StringIO(sstream.getvalue())]
     linesPerPage = 40
 
     while True:

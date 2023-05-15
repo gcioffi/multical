@@ -4,13 +4,15 @@
 #include <aslam/backend/JacobianContainer.hpp>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
+#include <aslam/backend/EuclideanExpressionNode.hpp>
 #include <aslam/backend/VectorExpressionNode.hpp>
 
 
 namespace aslam {
   namespace backend {
 
-
+    class EuclideanExpressionNode;
+    
     /**
      * \class ScalarExpressionNode
      * \brief The superclass of all classes representing scalar points.
@@ -138,6 +140,25 @@ namespace aslam {
           virtual void getDesignVariablesImplementation(DesignVariable::set_t & designVariables) const;
 
           boost::shared_ptr<VectorExpressionNode<1> > _lhs;
+    };
+
+    class ScalarExpressionNodeDotProduct : public ScalarExpressionNode
+    {
+      public:
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+          ScalarExpressionNodeDotProduct(boost::shared_ptr<EuclideanExpressionNode> lhs,
+                                       boost::shared_ptr<EuclideanExpressionNode> rhs);
+          virtual ~ScalarExpressionNodeDotProduct();
+      protected:
+          // These functions must be implemented by child classes.
+          virtual double toScalarImplementation() const;
+          virtual void evaluateJacobiansImplementation(JacobianContainer & outJacobians) const;
+          virtual void evaluateJacobiansImplementation(JacobianContainer & outJacobians, const Eigen::MatrixXd & applyChainRule) const;
+          virtual void getDesignVariablesImplementation(DesignVariable::set_t & designVariables) const;
+
+          boost::shared_ptr<EuclideanExpressionNode> _lhs;
+          boost::shared_ptr<EuclideanExpressionNode> _rhs;
+
     };
 
 

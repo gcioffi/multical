@@ -287,7 +287,7 @@ class SensorParametersBase(ParametersBase):
         self.data[self.timeshift_field_name] = time_shift
 
 
-class CameraParameters(ParametersBase):
+class CameraParameters(SensorParametersBase):
     def __init__(self, yamlFile, reference_sensor_name="camera0", createYaml=False):
         SensorParametersBase.__init__(self, yamlFile, "CameraConfig", reference_sensor_name, createYaml)
 

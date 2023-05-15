@@ -322,17 +322,19 @@ def main():
 
     print()
     tag = "calibration_results-"
-    tag += parsed.chain_yaml.translate(None, "<>:/\|?*").replace('.yaml', '', 1)
+    # tag += parsed.chain_yaml.translate(None, "<>:/\|?*").replace('.yaml', '', 1)
+    tag += os.path.splitext(parsed.chain_yaml)[0]
     tag += '-'
     if has_imu:
-        tag += parsed.imu_yaml.translate(None, "<>:/\|?*").replace('.yaml', '',
-                                                                   1)
+        # tag += parsed.imu_yaml.translate(None, "<>:/\|?*").replace('.yaml', '', 1)
+        tag += os.path.splitext(parsed.imu_yaml)[0]
         tag += '-'
     if parsed.lidar_yaml:
-        tag += parsed.lidar_yaml.translate(None, "<>:/\|?*").replace('.yaml',
-                                                                     '', 1)
+        # tag += parsed.lidar_yaml.translate(None, "<>:/\|?*").replace('.yaml', '', 1)
+        tag += os.path.splitext(parsed.lidar_yaml)[0]
         tag += '-'
-    tag += parsed.bagfile[0].translate(None, "<>:/\|?*").replace('.bag', '', 1)
+    # tag += parsed.bagfile[0].translate(None, "<>:/\|?*").replace('.bag', '', 1)
+    tag += os.path.splitext(parsed.bagfile[0])[0]
 
     cam_result_file_name = tag + "-cams.yaml"
     iCal.saveCamChainParametersYaml(cam_result_file_name)
@@ -342,23 +344,23 @@ def main():
         print()
         cam_result_file_name = tag + "-imus.yaml"
         iCal.saveImuSetParametersYaml(cam_result_file_name)
-        print("  Saving imu calibration to file: {0}".format() % cam_result_file_name)
+        print("  Saving imu calibration to file: %s".format() % cam_result_file_name)
 
     if has_lidar:
         print()
         lidar_result_file_name = tag + "-lidars.yaml"
         iCal.saveLiDARsParametersYaml(lidar_result_file_name)
-        print("  Saving LiDARs calibration to file: {0}".format() % lidar_result_file_name)
+        print("  Saving LiDARs calibration to file: %s".format() % lidar_result_file_name)
 
     resultFileTxt = tag + ".txt"
     util.saveResultTxt(iCal, filename=resultFileTxt)
-    print( "  Detailed results written to file: {0}".format(resultFileTxt))
+    print( "  Detailed results written to file: %s".format() % resultFileTxt)
 
     print( "Generating result report...")
     reportFile = "report-" + tag + ".pdf"
     util.generateReport(iCal, filename=reportFile,
                         showOnScreen=not parsed.dontShowReport)
-    print( "  Report written to {0}".format(reportFile))
+    print( "  Report written to %s".format() % reportFile)
     print()
 
 
