@@ -1,5 +1,9 @@
 # Multical
 
+## Run
+
+```rosrun kalibr multical_calibrate_sensors --bag multical_calibration_example_data.bag --imus imu.yaml --cams cameras.yaml --lidars lidar.yaml --targets april_6x6.yaml```
+
 **Mul**tiple **t**argets for multiple **I**MUs, **c**ameras **a**nd **L**iDARs (Lasers) spatiotemporal calibration
 ## The dataset is available [here](https://robotics.shanghaitech.edu.cn/datasets/multical)
 ## Introduction
