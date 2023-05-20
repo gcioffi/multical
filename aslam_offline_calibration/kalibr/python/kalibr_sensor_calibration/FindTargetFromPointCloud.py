@@ -11,15 +11,15 @@ def extract_plane_points(point_cloud):
         return np.array([])
     o3d_point_cloud = o3d.geometry.PointCloud()
     o3d_point_cloud.points = o3d.utility.Vector3dVector(point_cloud[:, :3])
-    _, inliers = o3d_point_cloud.segment_plane(distance_threshold=0.03,
+    plane_model, inliers = o3d_point_cloud.segment_plane(distance_threshold=0.03,
                                                ransac_n=num_point_threshold,
                                                num_iterations=100)
-    return point_cloud[inliers]
+    return plane_model, point_cloud[inliers]
 
 
 def find_points_on_tapes(point_cloud):
     filtered_points = point_cloud[point_cloud[:, 4] > 200]
-    filtered_points = extract_plane_points(filtered_points)
+    _, filtered_points = extract_plane_points(filtered_points)
     return filtered_points
 
 
@@ -93,8 +93,9 @@ def calculate_direction(line_centroid, intersection):
         return axis_vector / norm
 
 
-def find_target_pose(point_cloud, show_point_cloud=False):
-
+# original version. It requires high reflective tape 
+# (lidar intensity from tape > 200)
+def find_target_pose(point_cloud, show_point_cloud=False):    
     tape_points = find_points_on_tapes(point_cloud)
     if tape_points.shape[0] < 10:
         return None
@@ -125,3 +126,90 @@ def find_target_pose(point_cloud, show_point_cloud=False):
                        [coordinate])
 
     return position, orientation, timestamp
+
+
+# require knowledge of where the aprilgrid is wrt the lidar
+# and the position of the tape wrt the aprilgrid
+def find_target_pose_v2(point_cloud, show_point_cloud=False):
+    # filter points using prior knowledge of the aprilgrid position
+    x_thr = 1.2
+    y_radius = 1.2
+    mask = []
+    for p in point_cloud:
+        if (0. < p[0] < x_thr) and (-y_radius < p[1] < y_radius):
+            mask.append(True)
+        else:
+            mask.append(False)
+    filtered_points = point_cloud[mask]
+    
+    # extract aprilgrid plane
+    plane_model, plane_points = extract_plane_points(filtered_points)
+    if plane_points.shape[0] < 10:
+        return None
+
+    # debug visualization
+    # showPointCloud([plane_points[:,:3]])
+
+    # extract lowest scan on the aprilgrid
+    z_min = np.min(plane_points[:, 2])
+    z_thr = z_min + 0.03
+    mask = []
+    for p in plane_points:
+        if p[2] > z_thr:
+            mask.append(False)
+        else:
+            mask.append(True)
+    lowest_scan_points = plane_points[mask]
+
+    # debug visualization
+    # showPointCloud([lowest_scan_points[:,:3]])
+
+    # fit a line
+    points_xyz = lowest_scan_points[:, :3]
+    num_inlier_threshold = max(int(points_xyz.shape[0] / 8), 5)
+    try:
+        lowest_scan_line_model, lowest_scan_line_inliers = ransac(points_xyz, 
+                                                                  LineModelND,
+                                                                  min_samples=num_inlier_threshold,
+                                                                  residual_threshold=0.03,
+                                                                  max_trials=100)
+    except Exception:
+        return None
+    lowest_scan_line_dir = lowest_scan_line_model.params[1]
+
+    # debug visualization
+    # showPointCloud([lowest_scan_points[lowest_scan_line_inliers,:3]])
+
+    # Find position of target reference frame (bottom left)
+    pos_idx = np.argmax(lowest_scan_points[:,1])
+    position = lowest_scan_points[pos_idx, :3]
+    timestamp = lowest_scan_points[pos_idx, 3]
+
+    # Find orientation of target reference frame (see paper Fig. 2)
+    [a, b, c, d] = plane_model
+    plane_normal = np.array([a, b, c])
+
+    z_axis = plane_normal / np.linalg.norm(plane_normal)
+    if z_axis.dot(position) > 0:
+        z_axis = z_axis * -1.0
+    x_axis = lowest_scan_line_dir / np.linalg.norm(lowest_scan_line_dir)
+    y_axis = np.cross(z_axis, x_axis)
+
+    z_axis_check = np.cross(x_axis, y_axis)
+    if z_axis_check.dot(position) > 0:
+        x_axis = -1. * x_axis
+        y_axis = np.cross(z_axis, x_axis)
+    
+    orientation = np.column_stack([x_axis, y_axis, z_axis])
+
+    if show_point_cloud:
+        transformed_points = np.dot(point_cloud[:, :3] - position,
+                                    orientation)
+        transformed_tape_points = np.dot(lowest_scan_points[:, :3] - position,
+                                         orientation)
+        coordinate = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6)
+        showPointCloud([transformed_points, transformed_tape_points],
+                       [coordinate])
+
+    return position, orientation, timestamp
+

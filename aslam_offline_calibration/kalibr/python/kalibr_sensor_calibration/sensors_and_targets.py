@@ -9,7 +9,7 @@ import kalibr_errorterms as ket
 from . import calibrator as ic
 from .LiDARToSensorCalibration import *
 from . import util
-from .FindTargetFromPointCloud import find_target_pose
+from .FindTargetFromPointCloud import find_target_pose, find_target_pose_v2
 import cv2
 import sys
 import math
@@ -179,8 +179,9 @@ class LiDAR:
             num = downsampled_cloud.shape[0]
             self.lidarData[num_points:num_points+num] = downsampled_cloud
             num_points += num
-            if not self.hasInitializedExtrinsics and idx % 5 == 0:
-                targetPose = find_target_pose(cloud, self.showPointCloud)
+            if not self.hasInitializedExtrinsics and idx % 50 == 0:
+                # targetPose = find_target_pose(cloud, self.showPointCloud)
+                targetPose = find_target_pose_v2(cloud, self.showPointCloud)
                 if targetPose is not None:
                     self.targetPoses.append(targetPose)
 
