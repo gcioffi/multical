@@ -2,7 +2,20 @@
 
 ## Run
 
-```rosrun kalibr multical_calibrate_sensors --bag multical_calibration_example_data.bag --imus imu.yaml --cams cameras.yaml --lidars lidar.yaml --targets april_6x6.yaml```
+```rosrun kalibr multical_calibrate_sensors --bag multical_calibration_example_data.bag --imus imu.yaml --cams cameras.yaml --lidars lidar.yaml --targets april_6x6.yaml --show-point-cloud```
+
+I modified the Aprilgrid detection because the original method did not work.
+The original method relies on the fact that the reflective paper attached to the aprilgrid (see paper for details) is detected by the Lidar with much larger intensity than the surroundings. 
+This was not the case with our Lidar.
+
+[My solution](https://github.com/gcioffi/multical/blob/gc/devel/aslam_offline_calibration/kalibr/python/kalibr_sensor_calibration/FindTargetFromPointCloud.py#L133) is to detect a planar surface at a [max distance](https://github.com/gcioffi/multical/blob/gc/devel/aslam_offline_calibration/kalibr/python/kalibr_sensor_calibration/FindTargetFromPointCloud.py#L135) in front of the Lidar and assume that that is the Aprilgrid.
+So, make sure that there aren't other planar surfaces in this area.
+I added a [visualization function](https://github.com/gcioffi/multical/blob/gc/devel/aslam_offline_calibration/kalibr/python/kalibr_sensor_calibration/FindTargetFromPointCloud.py#L205), you can enable it with the flag ```--show-point-cloud```, to check that the aprilgrid is correctly detected.
+If everything worked properly, you will see a reference frame depicted at the bottom left corner of the aprilgrid, at the intersection of the 2 reflective tape stripes.
+
+I noted that the algorithm is able to converge with around 15% / 20% of false aprilgrid detections.
+
+From here below, it's the original Readme.
 
 **Mul**tiple **t**argets for multiple **I**MUs, **c**ameras **a**nd **L**iDARs (Lasers) spatiotemporal calibration
 ## The dataset is available [here](https://robotics.shanghaitech.edu.cn/datasets/multical)
