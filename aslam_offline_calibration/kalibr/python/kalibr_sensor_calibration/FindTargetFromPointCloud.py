@@ -8,7 +8,7 @@ from .util import showPointCloud
 def extract_plane_points(point_cloud):
     num_point_threshold = 20
     if point_cloud.shape[0] < num_point_threshold:
-        return np.array([])
+        return np.array([]), np.array([])
     o3d_point_cloud = o3d.geometry.PointCloud()
     o3d_point_cloud.points = o3d.utility.Vector3dVector(point_cloud[:, :3])
     plane_model, inliers = o3d_point_cloud.segment_plane(distance_threshold=0.03,
